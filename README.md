@@ -30,10 +30,14 @@ A training app to improve your ability to express thoughts in words.
 
 ## Tech Stack
 
-### Frontend
+### Frontend (Web)
 - Next.js
 - TypeScript
 - Tailwind CSS
+
+### Mobile
+- iOS (Swift / SwiftUI)
+- Android (Kotlin / Jetpack Compose)
 
 ### Backend
 - Rust
@@ -118,73 +122,6 @@ sequenceDiagram
     F-->>U: Display result
 ```
 
-### Database Schema
-
-```mermaid
-erDiagram
-    USERS ||--o{ ANSWERS : creates
-    USERS ||--o{ COMMENTS : writes
-    USERS ||--o{ LIKES : gives
-    USERS ||--o{ FOLLOWS : follows
-
-    CATEGORIES ||--o{ CHALLENGES : contains
-    CHALLENGES ||--o{ ANSWERS : has
-    ANSWERS ||--o{ COMMENTS : has
-    ANSWERS ||--o{ LIKES : receives
-
-    USERS {
-        uuid id PK
-        string email
-        string name
-        string avatar
-        string bio
-        int total_likes
-    }
-
-    CATEGORIES {
-        uuid id PK
-        string name
-        string icon
-        int char_limit
-    }
-
-    CHALLENGES {
-        uuid id PK
-        uuid category_id FK
-        string title
-        int char_limit
-        date release_date
-    }
-
-    ANSWERS {
-        uuid id PK
-        uuid challenge_id FK
-        uuid user_id FK
-        string content
-        int score
-        json ai_feedback
-        int like_count
-    }
-
-    COMMENTS {
-        uuid id PK
-        uuid answer_id FK
-        uuid user_id FK
-        string content
-    }
-
-    LIKES {
-        uuid id PK
-        uuid answer_id FK
-        uuid user_id FK
-    }
-
-    FOLLOWS {
-        uuid id PK
-        uuid follower_id FK
-        uuid following_id FK
-    }
-```
 
 ## Project Structure
 
@@ -241,92 +178,6 @@ docker-compose -f docker-compose.dev.yml logs -f
 
 ```bash
 docker exec -i gengoka-db psql -U gengoka -d gengoka_db < app/seeds/seed_data.sql
-```
-
-## API Endpoints
-
-### Health
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-
-### Categories
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/categories` | List all categories |
-| GET | `/api/v1/categories/{id}` | Get category |
-| GET | `/api/v1/categories/{id}/challenges` | Get challenges by category |
-
-### Challenges (お題)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/challenges` | List challenges |
-| GET | `/api/v1/challenges/daily` | Get daily challenges |
-| GET | `/api/v1/challenges/{id}` | Get challenge |
-| POST | `/api/v1/challenges` | Create challenge |
-| GET | `/api/v1/challenges/{id}/answers` | Get answers for challenge |
-| POST | `/api/v1/challenges/{id}/answers` | Submit answer |
-
-### Answers (回答)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/answers/{id}` | Get answer |
-| PUT | `/api/v1/answers/{id}` | Update answer |
-| DELETE | `/api/v1/answers/{id}` | Delete answer |
-| POST | `/api/v1/answers/{id}/like` | Like answer |
-| DELETE | `/api/v1/answers/{id}/like` | Unlike answer |
-| GET | `/api/v1/answers/{id}/comments` | Get comments |
-| POST | `/api/v1/answers/{id}/comments` | Add comment |
-
-### Users
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/users` | Create user |
-| GET | `/api/v1/users/{id}` | Get user profile |
-| PUT | `/api/v1/users/{id}` | Update profile |
-| GET | `/api/v1/users/{id}/answers` | Get user's answers |
-| POST | `/api/v1/users/{id}/follow` | Follow user |
-| DELETE | `/api/v1/users/{id}/follow` | Unfollow user |
-| GET | `/api/v1/users/{id}/followers` | Get followers |
-| GET | `/api/v1/users/{id}/following` | Get following |
-
-### Feed & Rankings
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/feed` | Timeline feed |
-| GET | `/api/v1/trending` | Trending answers |
-| GET | `/api/v1/rankings/daily` | Daily ranking |
-| GET | `/api/v1/rankings/weekly` | Weekly ranking |
-| GET | `/api/v1/rankings/all-time` | All-time ranking |
-
-## Authentication
-
-User identification is done via `X-User-ID` header:
-
-```bash
-curl -H "X-User-ID: aaaa1111-1111-1111-1111-111111111111" \
-  http://localhost:8080/api/v1/answers/xxx/like -X POST
-```
-
-## Environment Variables
-
-```bash
-# Server
-SERVER_PORT=8080
-SERVER_HOST=0.0.0.0
-RUST_LOG=info
-
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=gengoka
-DB_PASSWORD=gengoka_password
-DB_NAME=gengoka_db
-DB_MAX_CONNECTIONS=10
-
-# Pagination
-DEFAULT_PAGE_SIZE=20
-MAX_PAGE_SIZE=100
 ```
 
 ## Development
