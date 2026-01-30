@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>言語化トレーニング - ゲンゴカ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      padding-bottom: 80px;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    /* Screen management */
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 40px 0 30px;
+    }
+    .header h1 {
+      color: white;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .header-small {
+      padding: 20px 0 16px;
+    }
+    .header-small h1 {
+      font-size: 22px;
+    }
+
+    /* Card */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      margin-bottom: 20px;
+    }
+
+    /* Category Grid */
+    .category-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .category-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+    .category-btn:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+    }
+    .category-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .category-icon.situation { background: #fff3e0; }
+    .category-icon.summary { background: #e3f2fd; }
+    .category-icon.emotion { background: #fce4ec; }
+    .category-icon.rephrase { background: #e8f5e9; }
+    .category-icon.explain { background: #f3e5f5; }
+
+    .category-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .category-info p {
+      font-size: 12px;
+      color: #888;
+    }
+    .category-limit {
+      margin-left: auto;
+      background: #f5f5f5;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    /* Challenge Screen */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: white;
+      font-size: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 0;
+      margin-bottom: 16px;
+    }
+    .back-btn:hover {
+      opacity: 0.8;
+    }
+
+    .challenge-category {
+      display: inline-block;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .challenge-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .challenge-limit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .challenge-limit-icon {
+      font-size: 20px;
+    }
+    .challenge-limit-text {
+      font-size: 14px;
+      color: #666;
+    }
+    .challenge-limit-text strong {
+      color: #e53935;
+    }
+
+    .answer-area {
+      position: relative;
+    }
+    .answer-textarea {
+      width: 100%;
+      height: 120px;
+      padding: 16px;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      resize: none;
+      transition: border-color 0.2s;
+    }
+    .answer-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .answer-textarea.over-limit {
+      border-color: #e53935;
+    }
+
+    .char-counter {
+      position: absolute;
+      bottom: 12px;
+      right: 16px;
+      font-size: 14px;
+      color: #888;
+    }
+    .char-counter.over {
+      color: #e53935;
+      font-weight: 600;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 16px;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Result Screen */
+    .result-header {
+      text-align: center;
+      padding: 20px 0;
+    }
+    .result-score {
+      font-size: 64px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .result-label {
+      font-size: 14px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .result-section {
+      margin-top: 20px;
+    }
+    .result-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .result-answer {
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .feedback-card {
+      margin-top: 16px;
+      padding: 16px;
+      background: #e8f5e9;
+      border-radius: 12px;
+      border-left: 4px solid #4caf50;
+    }
+    .feedback-card h4 {
+      font-size: 14px;
+      color: #2e7d32;
+      margin-bottom: 8px;
+    }
+    .feedback-card p {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .improvement-card {
+      margin-top: 12px;
+      padding: 16px;
+      background: #fff3e0;
+      border-radius: 12px;
+      border-left: 4px solid #ff9800;
+    }
+    .improvement-card h4 {
+      font-size: 14px;
+      color: #e65100;
+      margin-bottom: 8px;
+    }
+    .improvement-card p {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .example-card {
+      margin-top: 12px;
+      padding: 16px;
+      background: #e3f2fd;
+      border-radius: 12px;
+      border-left: 4px solid #2196f3;
+    }
+    .example-card h4 {
+      font-size: 14px;
+      color: #1565c0;
+      margin-bottom: 8px;
+    }
+    .example-card p {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .action-btn {
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-btn.secondary {
+      background: white;
+      border: 2px solid #e8e8e8;
+      color: #666;
+    }
+    .action-btn.secondary:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+    .action-btn.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+    }
+    .action-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      padding: 16px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      margin-top: 24px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 4px;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 40px;
+    }
+    .loading.active {
+      display: block;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e8e8e8;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-text {
+      color: #888;
+      font-size: 14px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0 20px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 16px;
+      color: #888;
+      transition: color 0.2s;
+    }
+    .nav-item.active {
+      color: #667eea;
+    }
+    .nav-item:hover {
+      color: #667eea;
+    }
+    .nav-icon {
+      font-size: 24px;
+    }
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* Feed Screen */
+    .feed-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .feed-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .feed-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .feed-user-info {
+      flex: 1;
+    }
+    .feed-username {
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .feed-username:hover {
+      color: #667eea;
+    }
+    .feed-meta {
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .feed-score {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+
+    .feed-challenge {
+      font-size: 12px;
+      color: #666;
+      padding: 10px 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .feed-challenge-label {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+
+    .feed-answer {
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .feed-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding-top: 12px;
+    }
+    .feed-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #888;
+      font-size: 14px;
+      padding: 8px 0;
+      transition: all 0.2s;
+    }
+    .feed-action-btn:hover {
+      color: #667eea;
+    }
+    .feed-action-btn.liked {
+      color: #e91e63;
+    }
+    .feed-action-btn.liked .action-icon {
+      animation: like-pop 0.3s ease;
+    }
+    @keyframes like-pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .action-icon {
+      font-size: 20px;
+    }
+
+    /* Comments */
+    .comments-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .comment-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e8e8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .comment-content {
+      flex: 1;
+    }
+    .comment-username {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .comment-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #444;
+    }
+    .comment-time {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .comment-input-area {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .comment-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #e8e8e8;
+      border-radius: 20px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .comment-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .comment-submit {
+      padding: 10px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .comment-submit:hover {
+      background: #5a6fd6;
+    }
+
+    /* Profile Screen */
+    .profile-header-card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0 auto 16px;
+    }
+    .profile-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .profile-handle {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+    .profile-bio {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .profile-stats {
+      display: flex;
+      justify-content: space-around;
+      padding: 16px 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 20px;
+    }
+    .profile-stat {
+      text-align: center;
+      cursor: pointer;
+    }
+    .profile-stat:hover .profile-stat-value {
+      color: #667eea;
+    }
+    .profile-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+    .profile-stat-label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .follow-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .follow-btn.follow {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+    }
+    .follow-btn.follow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    }
+    .follow-btn.following {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+    .follow-btn.following:hover {
+      background: #f8f9fa;
+    }
+
+    .profile-tabs {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+    .profile-tab {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .profile-tab.active {
+      background: #667eea;
+      color: white;
+    }
+
+    /* Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+    .filter-tab {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 20px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .filter-tab.active {
+      background: white;
+      color: #667eea;
+    }
+    .filter-tab:hover:not(.active) {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* Notification badge */
+    .nav-item-wrapper {
+      position: relative;
+    }
+    .notification-badge {
+      position: absolute;
+      top: 0;
+      right: 8px;
+      width: 18px;
+      height: 18px;
+      background: #e91e63;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* View more comments */
+    .view-more-comments {
+      font-size: 13px;
+      color: #888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+    .view-more-comments:hover {
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen active">
+      <div class="header">
+        <h1>ゲンゴカ</h1>
+        <p>言語化力を鍛えるトレーニング</p>
+      </div>
+
+      <div class="card">
+        <div class="category-grid">
+          <button class="category-btn" data-category="situation" data-limit="30">
+            <div class="category-icon situation">📍</div>
+            <div class="category-info">
+              <h3>状況描写</h3>
+              <p>その場にいない人に伝える</p>
+            </div>
+            <span class="category-limit">30文字</span>
+          </button>
+
+          <button class="category-btn" data-category="summary" data-limit="50">
+            <div class="category-icon summary">📚</div>
+            <div class="category-info">
+              <h3>要約力</h3>
+              <p>ストーリーを短く伝える</p>
+            </div>
+            <span class="category-limit">50文字</span>
+          </button>
+
+          <button class="category-btn" data-category="emotion" data-limit="30">
+            <div class="category-icon emotion">💭</div>
+            <div class="category-info">
+              <h3>感性の言語化</h3>
+              <p>気持ちを言葉にする</p>
+            </div>
+            <span class="category-limit">30文字</span>
+          </button>
+
+          <button class="category-btn" data-category="rephrase" data-limit="20">
+            <div class="category-icon rephrase">🔄</div>
+            <div class="category-info">
+              <h3>言い換え</h3>
+              <p>別の表現で伝える</p>
+            </div>
+            <span class="category-limit">20文字</span>
+          </button>
+
+          <button class="category-btn" data-category="explain" data-limit="50">
+            <div class="category-icon explain">💡</div>
+            <div class="category-info">
+              <h3>概念説明</h3>
+              <p>わかりやすく例える</p>
+            </div>
+            <span class="category-limit">50文字</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-value">12</div>
+          <div class="stat-label">今日の回答</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">78</div>
+          <div class="stat-label">平均スコア</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">5</div>
+          <div class="stat-label">連続日数</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Challenge Screen -->
+    <div id="challenge-screen" class="screen">
+      <button class="back-btn" onclick="showScreen('home')">
+        ← カテゴリー選択に戻る
+      </button>
+
+      <div class="card">
+        <span class="challenge-category" id="challenge-category-label">状況描写</span>
+
+        <h2 class="challenge-title" id="challenge-title">
+          「カフェで隣の人がコーヒーをこぼした瞬間」を、その場にいない人に伝わるように説明してください。
+        </h2>
+
+        <div class="challenge-limit">
+          <span class="challenge-limit-icon">✏️</span>
+          <span class="challenge-limit-text"><strong id="char-limit">30</strong>文字以内で回答</span>
+        </div>
+
+        <div class="answer-area">
+          <textarea
+            class="answer-textarea"
+            id="answer-input"
+            placeholder="ここに回答を入力..."
+          ></textarea>
+          <span class="char-counter" id="char-counter">0/30</span>
+        </div>
+
+        <button class="submit-btn" id="submit-btn" disabled>
+          回答を送信
+        </button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">AIが評価中...</p>
+      </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+      <button class="back-btn" onclick="showScreen('home')">
+        ← ホームに戻る
+      </button>
+
+      <div class="card">
+        <div class="result-header">
+          <div class="result-score">85</div>
+          <div class="result-label">言語化スコア</div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">あなたの回答</div>
+          <div class="result-answer" id="result-answer">
+            隣の席でカップが傾き、茶色い液体がテーブルを滑り落ちた
+          </div>
+        </div>
+
+        <div class="feedback-card">
+          <h4>👍 良かった点</h4>
+          <p>「茶色い液体」という視覚的な描写が効果的です。「滑り落ちた」という動詞で動きが伝わります。</p>
+        </div>
+
+        <div class="improvement-card">
+          <h4>📝 改善ポイント</h4>
+          <p>「瞬間」の緊張感をもう少し表現できると、より臨場感が増します。</p>
+        </div>
+
+        <div class="example-card">
+          <h4>💎 お手本回答</h4>
+          <p>「カップが傾いた刹那、褐色の波が白いテーブルを染めた」</p>
+        </div>
+
+        <div class="action-buttons">
+          <button class="action-btn secondary" onclick="showScreen('home')">
+            別のお題へ
+          </button>
+          <button class="action-btn primary" onclick="retryChallenge()">
+            もう一度挑戦
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feed Screen -->
+    <div id="feed-screen" class="screen">
+      <div class="header header-small">
+        <h1>みんなの回答</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active">すべて</button>
+        <button class="filter-tab">フォロー中</button>
+        <button class="filter-tab">状況描写</button>
+        <button class="filter-tab">要約力</button>
+        <button class="filter-tab">感性</button>
+      </div>
+
+      <!-- Feed Item 1 -->
+      <div class="feed-card">
+        <div class="feed-header">
+          <div class="feed-avatar" onclick="showProfile('yuki')">ゆ</div>
+          <div class="feed-user-info">
+            <div class="feed-username" onclick="showProfile('yuki')">ゆきの</div>
+            <div class="feed-meta">
+              <span class="feed-score">スコア 92</span>
+              <span>・</span>
+              <span>3時間前</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-challenge">
+          <span class="feed-challenge-label">状況描写</span>
+          <div>「カフェで隣の人がコーヒーをこぼした瞬間」を説明してください</div>
+        </div>
+
+        <div class="feed-answer">
+          カップが傾いた瞬間、琥珀色の波紋がテーブルを駆け抜けた
+        </div>
+
+        <div class="feed-actions">
+          <button class="feed-action-btn like-btn" data-id="1">
+            <span class="action-icon">♡</span>
+            <span class="like-count">24</span>
+          </button>
+          <button class="feed-action-btn comment-toggle-btn" data-id="1">
+            <span class="action-icon">💬</span>
+            <span>8</span>
+          </button>
+          <button class="feed-action-btn">
+            <span class="action-icon">🔖</span>
+          </button>
+        </div>
+
+        <div class="comments-section" id="comments-1" style="display: none;">
+          <div class="comment-item">
+            <div class="comment-avatar">た</div>
+            <div class="comment-content">
+              <div class="comment-username">たけし</div>
+              <div class="comment-text">「琥珀色の波紋」という表現が素敵ですね！情景が目に浮かびます</div>
+              <div class="comment-time">2時間前</div>
+            </div>
+          </div>
+          <div class="comment-item">
+            <div class="comment-avatar">み</div>
+            <div class="comment-content">
+              <div class="comment-username">みさき</div>
+              <div class="comment-text">参考になります！</div>
+              <div class="comment-time">1時間前</div>
+            </div>
+          </div>
+          <button class="view-more-comments">他6件のコメントを表示</button>
+          <div class="comment-input-area">
+            <input type="text" class="comment-input" placeholder="コメントを追加...">
+            <button class="comment-submit">送信</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed Item 2 -->
+      <div class="feed-card">
+        <div class="feed-header">
+          <div class="feed-avatar" onclick="showProfile('ken')" style="background: linear-gradient(135deg, #11998e, #38ef7d);">け</div>
+          <div class="feed-user-info">
+            <div class="feed-username" onclick="showProfile('ken')">けんた</div>
+            <div class="feed-meta">
+              <span class="feed-score">スコア 88</span>
+              <span>・</span>
+              <span>5時間前</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-challenge">
+          <span class="feed-challenge-label">概念説明</span>
+          <div>「Wi-Fi」をおじいちゃんにもわかるように説明してください</div>
+        </div>
+
+        <div class="feed-answer">
+          目に見えない電波の道を通って、世界中の情報が届く魔法の郵便屋さんです
+        </div>
+
+        <div class="feed-actions">
+          <button class="feed-action-btn like-btn liked" data-id="2">
+            <span class="action-icon">♥</span>
+            <span class="like-count">42</span>
+          </button>
+          <button class="feed-action-btn comment-toggle-btn" data-id="2">
+            <span class="action-icon">💬</span>
+            <span>15</span>
+          </button>
+          <button class="feed-action-btn">
+            <span class="action-icon">🔖</span>
+          </button>
+        </div>
+
+        <div class="comments-section" id="comments-2" style="display: none;">
+          <div class="comment-item">
+            <div class="comment-avatar">あ</div>
+            <div class="comment-content">
+              <div class="comment-username">あやか</div>
+              <div class="comment-text">魔法の郵便屋さん、という例えが絶妙！</div>
+              <div class="comment-time">4時間前</div>
+            </div>
+          </div>
+          <button class="view-more-comments">他14件のコメントを表示</button>
+          <div class="comment-input-area">
+            <input type="text" class="comment-input" placeholder="コメントを追加...">
+            <button class="comment-submit">送信</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed Item 3 -->
+      <div class="feed-card">
+        <div class="feed-header">
+          <div class="feed-avatar" onclick="showProfile('saki')" style="background: linear-gradient(135deg, #ee0979, #ff6a00);">さ</div>
+          <div class="feed-user-info">
+            <div class="feed-username" onclick="showProfile('saki')">さき</div>
+            <div class="feed-meta">
+              <span class="feed-score">スコア 95</span>
+              <span>・</span>
+              <span>8時間前</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-challenge">
+          <span class="feed-challenge-label">感性の言語化</span>
+          <div>「切ない」を使わずに夕暮れの空を見た気持ちを表現</div>
+        </div>
+
+        <div class="feed-answer">
+          オレンジに染まる空を見上げ、胸の奥がきゅっと締まる
+        </div>
+
+        <div class="feed-actions">
+          <button class="feed-action-btn like-btn" data-id="3">
+            <span class="action-icon">♡</span>
+            <span class="like-count">67</span>
+          </button>
+          <button class="feed-action-btn comment-toggle-btn" data-id="3">
+            <span class="action-icon">💬</span>
+            <span>23</span>
+          </button>
+          <button class="feed-action-btn">
+            <span class="action-icon">🔖</span>
+          </button>
+        </div>
+
+        <div class="comments-section" id="comments-3" style="display: none;">
+          <div class="comment-item">
+            <div class="comment-avatar">り</div>
+            <div class="comment-content">
+              <div class="comment-username">りょう</div>
+              <div class="comment-text">「きゅっと締まる」がまさにその感覚！共感しました</div>
+              <div class="comment-time">7時間前</div>
+            </div>
+          </div>
+          <button class="view-more-comments">他22件のコメントを表示</button>
+          <div class="comment-input-area">
+            <input type="text" class="comment-input" placeholder="コメントを追加...">
+            <button class="comment-submit">送信</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="profile-screen" class="screen">
+      <button class="back-btn" onclick="showScreen('feed')">
+        ← 戻る
+      </button>
+
+      <div class="profile-header-card">
+        <div class="profile-avatar" id="profile-avatar">ゆ</div>
+        <div class="profile-name" id="profile-name">ゆきの</div>
+        <div class="profile-handle" id="profile-handle">@yukino_words</div>
+        <div class="profile-bio" id="profile-bio">言葉の力を信じています。毎日コツコツ言語化トレーニング中。目標は小説家になること。</div>
+
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="profile-stat-value" id="profile-posts">156</div>
+            <div class="profile-stat-label">回答</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value" id="profile-followers">1.2k</div>
+            <div class="profile-stat-label">フォロワー</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value" id="profile-following">89</div>
+            <div class="profile-stat-label">フォロー中</div>
+          </div>
+        </div>
+
+        <button class="follow-btn follow" id="follow-btn" onclick="toggleFollow()">
+          フォローする
+        </button>
+      </div>
+
+      <div class="profile-tabs">
+        <button class="profile-tab active">回答</button>
+        <button class="profile-tab">いいね</button>
+      </div>
+
+      <!-- Profile posts -->
+      <div class="feed-card">
+        <div class="feed-challenge">
+          <span class="feed-challenge-label">状況描写</span>
+          <div>「カフェで隣の人がコーヒーをこぼした瞬間」を説明してください</div>
+        </div>
+        <div class="feed-answer">
+          カップが傾いた瞬間、琥珀色の波紋がテーブルを駆け抜けた
+        </div>
+        <div class="feed-meta" style="margin-top: 12px;">
+          <span class="feed-score">スコア 92</span>
+          <span>・</span>
+          <span>3時間前</span>
+        </div>
+        <div class="feed-actions">
+          <button class="feed-action-btn">
+            <span class="action-icon">♡</span>
+            <span>24</span>
+          </button>
+          <button class="feed-action-btn">
+            <span class="action-icon">💬</span>
+            <span>8</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="feed-card">
+        <div class="feed-challenge">
+          <span class="feed-challenge-label">要約力</span>
+          <div>「桃太郎」のストーリーを説明してください</div>
+        </div>
+        <div class="feed-answer">
+          桃から生まれた少年が、仲間と共に鬼を退治し、宝を持ち帰る冒険譚
+        </div>
+        <div class="feed-meta" style="margin-top: 12px;">
+          <span class="feed-score">スコア 89</span>
+          <span>・</span>
+          <span>1日前</span>
+        </div>
+        <div class="feed-actions">
+          <button class="feed-action-btn">
+            <span class="action-icon">♡</span>
+            <span>31</span>
+          </button>
+          <button class="feed-action-btn">
+            <span class="action-icon">💬</span>
+            <span>12</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Profile Screen -->
+    <div id="myprofile-screen" class="screen">
+      <div class="header header-small">
+        <h1>マイページ</h1>
+      </div>
+
+      <div class="profile-header-card">
+        <div class="profile-avatar">私</div>
+        <div class="profile-name">あなた</div>
+        <div class="profile-handle">@your_handle</div>
+        <div class="profile-bio">プロフィールを編集して自己紹介を追加しましょう</div>
+
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="profile-stat-value">12</div>
+            <div class="profile-stat-label">回答</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value">34</div>
+            <div class="profile-stat-label">フォロワー</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value">56</div>
+            <div class="profile-stat-label">フォロー中</div>
+          </div>
+        </div>
+
+        <button class="follow-btn following" onclick="alert('プロフィール編集画面へ')">
+          プロフィールを編集
+        </button>
+      </div>
+
+      <div class="profile-tabs">
+        <button class="profile-tab active">回答</button>
+        <button class="profile-tab">いいね</button>
+        <button class="profile-tab">保存済み</button>
+      </div>
+
+      <div class="feed-card">
+        <div class="feed-challenge">
+          <span class="feed-challenge-label">感性の言語化</span>
+          <div>「嬉しい」を使わずに友人に会えた気持ちを表現</div>
+        </div>
+        <div class="feed-answer">
+          久しぶりの再会に、自然と頬が緩み、言葉より先に笑顔がこぼれた
+        </div>
+        <div class="feed-meta" style="margin-top: 12px;">
+          <span class="feed-score">スコア 85</span>
+          <span>・</span>
+          <span>昨日</span>
+        </div>
+        <div class="feed-actions">
+          <button class="feed-action-btn">
+            <span class="action-icon">♡</span>
+            <span>18</span>
+          </button>
+          <button class="feed-action-btn">
+            <span class="action-icon">💬</span>
+            <span>5</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-screen="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">ホーム</span>
+    </button>
+    <div class="nav-item-wrapper">
+      <button class="nav-item" data-screen="feed">
+        <span class="nav-icon">📱</span>
+        <span class="nav-label">タイムライン</span>
+      </button>
+      <span class="notification-badge">3</span>
+    </div>
+    <button class="nav-item" data-screen="myprofile">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">マイページ</span>
+    </button>
+  </nav>
+
+  <script>
+    // Sample challenges for each category
+    const challenges = {
+      situation: [
+        '「カフェで隣の人がコーヒーをこぼした瞬間」を、その場にいない人に伝わるように説明してください。',
+        '「満員電車でドアが閉まる直前」の光景を、見たことがない人に伝わるように説明してください。',
+        '「雨が降り始めた瞬間の街の様子」を、その場にいない人に伝わるように説明してください。'
+      ],
+      summary: [
+        '「桃太郎」のストーリーを、読んだことがない人に向けて説明してください。',
+        '「シンデレラ」のストーリーを、読んだことがない人に向けて説明してください。',
+        '「浦島太郎」のストーリーを、読んだことがない人に向けて説明してください。'
+      ],
+      emotion: [
+        '「切ない」という言葉を使わずに、夕暮れの空を見て感じた気持ちを表現してください。',
+        '「嬉しい」という言葉を使わずに、久しぶりに友人に会えた気持ちを表現してください。',
+        '「寂しい」という言葉を使わずに、一人で過ごす夜の気持ちを表現してください。'
+      ],
+      rephrase: [
+        '「検討します（断り文句として）」を、相手を傷つけない丁寧な言い回しに変えてください。',
+        '「それは無理です」を、相手を傷つけない丁寧な言い回しに変えてください。',
+        '「興味ありません」を、相手を傷つけない丁寧な言い回しに変えてください。'
+      ],
+      explain: [
+        '「Wi-Fi」という仕組みを、おじいちゃんにもわかるように例え話で説明してください。',
+        '「クラウド」という仕組みを、おじいちゃんにもわかるように例え話で説明してください。',
+        '「AI」という仕組みを、おじいちゃんにもわかるように例え話で説明してください。'
+      ]
+    };
+
+    const categoryNames = {
+      situation: '状況描写',
+      summary: '要約力',
+      emotion: '感性の言語化',
+      rephrase: '言い換え',
+      explain: '概念説明'
+    };
+
+    const profileData = {
+      yuki: {
+        avatar: 'ゆ',
+        name: 'ゆきの',
+        handle: '@yukino_words',
+        bio: '言葉の力を信じています。毎日コツコツ言語化トレーニング中。目標は小説家になること。',
+        posts: '156',
+        followers: '1.2k',
+        following: '89',
+        color: 'linear-gradient(135deg, #667eea, #764ba2)'
+      },
+      ken: {
+        avatar: 'け',
+        name: 'けんた',
+        handle: '@kenta_express',
+        bio: 'ITエンジニア。難しいことを簡単に説明するのが好き。',
+        posts: '89',
+        followers: '567',
+        following: '123',
+        color: 'linear-gradient(135deg, #11998e, #38ef7d)'
+      },
+      saki: {
+        avatar: 'さ',
+        name: 'さき',
+        handle: '@saki_poetry',
+        bio: '詩を書くのが趣味です。日常の小さな感動を言葉にしたい。',
+        posts: '234',
+        followers: '2.3k',
+        following: '156',
+        color: 'linear-gradient(135deg, #ee0979, #ff6a00)'
+      }
+    };
+
+    let currentCategory = '';
+    let currentLimit = 30;
+    let currentChallenge = '';
+    let isFollowing = false;
+
+    // Screen navigation
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId + '-screen').classList.add('active');
+
+      // Update nav
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.screen === screenId) {
+          item.classList.add('active');
+        }
+      });
+    }
+
+    // Bottom nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const screen = item.dataset.screen;
+        if (screen) showScreen(screen);
+      });
+    });
+
+    // Category selection
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentCategory = btn.dataset.category;
+        currentLimit = parseInt(btn.dataset.limit);
+        startChallenge();
+      });
+    });
+
+    function startChallenge() {
+      const challengeList = challenges[currentCategory];
+      currentChallenge = challengeList[Math.floor(Math.random() * challengeList.length)];
+
+      document.getElementById('challenge-category-label').textContent = categoryNames[currentCategory];
+      document.getElementById('challenge-title').textContent = currentChallenge;
+      document.getElementById('char-limit').textContent = currentLimit;
+      document.getElementById('char-counter').textContent = `0/${currentLimit}`;
+      document.getElementById('answer-input').value = '';
+      document.getElementById('answer-input').classList.remove('over-limit');
+      document.getElementById('char-counter').classList.remove('over');
+      document.getElementById('submit-btn').disabled = true;
+      document.getElementById('loading').classList.remove('active');
+
+      showScreen('challenge');
+    }
+
+    // Character counter
+    const answerInput = document.getElementById('answer-input');
+    const charCounter = document.getElementById('char-counter');
+    const submitBtn = document.getElementById('submit-btn');
+
+    answerInput.addEventListener('input', () => {
+      const length = answerInput.value.length;
+      charCounter.textContent = `${length}/${currentLimit}`;
+
+      if (length > currentLimit) {
+        answerInput.classList.add('over-limit');
+        charCounter.classList.add('over');
+        submitBtn.disabled = true;
+      } else {
+        answerInput.classList.remove('over-limit');
+        charCounter.classList.remove('over');
+        submitBtn.disabled = length === 0;
+      }
+    });
+
+    // Submit answer
+    submitBtn.addEventListener('click', () => {
+      document.getElementById('loading').classList.add('active');
+
+      // Simulate AI evaluation
+      setTimeout(() => {
+        document.getElementById('result-answer').textContent = answerInput.value;
+        showScreen('result');
+      }, 1500);
+    });
+
+    function retryChallenge() {
+      startChallenge();
+    }
+
+    // Like functionality
+    document.querySelectorAll('.like-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const countEl = btn.querySelector('.like-count');
+        const iconEl = btn.querySelector('.action-icon');
+        let count = parseInt(countEl.textContent);
+
+        if (btn.classList.contains('liked')) {
+          btn.classList.remove('liked');
+          iconEl.textContent = '♡';
+          countEl.textContent = count - 1;
+        } else {
+          btn.classList.add('liked');
+          iconEl.textContent = '♥';
+          countEl.textContent = count + 1;
+        }
+      });
+    });
+
+    // Comment toggle
+    document.querySelectorAll('.comment-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const commentsSection = document.getElementById('comments-' + id);
+        if (commentsSection.style.display === 'none') {
+          commentsSection.style.display = 'block';
+        } else {
+          commentsSection.style.display = 'none';
+        }
+      });
+    });
+
+    // Show profile
+    function showProfile(userId) {
+      const profile = profileData[userId];
+      if (profile) {
+        document.getElementById('profile-avatar').textContent = profile.avatar;
+        document.getElementById('profile-avatar').style.background = profile.color;
+        document.getElementById('profile-name').textContent = profile.name;
+        document.getElementById('profile-handle').textContent = profile.handle;
+        document.getElementById('profile-bio').textContent = profile.bio;
+        document.getElementById('profile-posts').textContent = profile.posts;
+        document.getElementById('profile-followers').textContent = profile.followers;
+        document.getElementById('profile-following').textContent = profile.following;
+
+        // Reset follow button
+        isFollowing = false;
+        const followBtn = document.getElementById('follow-btn');
+        followBtn.classList.remove('following');
+        followBtn.classList.add('follow');
+        followBtn.textContent = 'フォローする';
+
+        showScreen('profile');
+      }
+    }
+
+    // Toggle follow
+    function toggleFollow() {
+      const followBtn = document.getElementById('follow-btn');
+      isFollowing = !isFollowing;
+
+      if (isFollowing) {
+        followBtn.classList.remove('follow');
+        followBtn.classList.add('following');
+        followBtn.textContent = 'フォロー中';
+      } else {
+        followBtn.classList.remove('following');
+        followBtn.classList.add('follow');
+        followBtn.textContent = 'フォローする';
+      }
+    }
+
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    // Profile tabs
+    document.querySelectorAll('.profile-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const parent = tab.parentElement;
+        parent.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
