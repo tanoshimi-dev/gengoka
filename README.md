@@ -55,7 +55,8 @@ A training app to improve your ability to express thoughts in words.
 graph TB
     subgraph Client
         Web[Web Browser]
-        Mobile[Mobile App]
+        iOS[iOS App<br/>Swift / SwiftUI]
+        Android[Android App<br/>Kotlin / Compose]
     end
 
     subgraph Frontend
@@ -82,8 +83,9 @@ graph TB
     end
 
     Web --> Next
-    Mobile --> Next
     Next -->|REST API| API
+    iOS -->|REST API| API
+    Android -->|REST API| API
     API --> H1
     API --> H2
     API --> H3
@@ -204,4 +206,4 @@ MIT
 
 ## Author
 
-Created with Claude Code
+たのしみdev with Claude Code
