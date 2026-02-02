@@ -41,5 +41,5 @@ data class ChallengeWithCategoryDto(
     val createdAt: String,
     @SerialName("updated_at")
     val updatedAt: String,
-    val category: CategoryDto
+    val category: CategoryDto? = null
 )

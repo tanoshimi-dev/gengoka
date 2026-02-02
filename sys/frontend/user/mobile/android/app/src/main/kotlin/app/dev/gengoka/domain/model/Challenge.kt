@@ -18,5 +18,5 @@ data class ChallengeWithCategory(
     val charLimit: Int,
     val releaseDate: String?,
     val answerCount: Int,
-    val category: Category
+    val category: Category?
 )

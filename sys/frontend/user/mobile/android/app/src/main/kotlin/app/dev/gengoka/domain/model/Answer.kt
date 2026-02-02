@@ -45,8 +45,8 @@ data class AnswerWithDetails(
 )
 
 data class AiFeedback(
-    val score: Int,
-    val goodPoints: String,
-    val improvement: String,
-    val exampleAnswer: String
+    val score: Int?,
+    val goodPoints: String?,
+    val improvement: String?,
+    val exampleAnswer: String?
 )

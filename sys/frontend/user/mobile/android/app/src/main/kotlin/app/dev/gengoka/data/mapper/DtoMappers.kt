@@ -31,7 +31,7 @@ fun ChallengeWithCategoryDto.toDomain() = ChallengeWithCategory(
     charLimit = charLimit,
     releaseDate = releaseDate,
     answerCount = answerCount,
-    category = category.toDomain()
+    category = category?.toDomain()
 )
 
 fun AiFeedbackDto.toDomain() = AiFeedback(

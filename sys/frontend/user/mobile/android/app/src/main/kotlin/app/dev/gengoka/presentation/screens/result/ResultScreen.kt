@@ -108,27 +108,31 @@ fun ResultScreen(
                                 answer.aiFeedback?.let { feedback ->
                                     Spacer(modifier = Modifier.height(16.dp))
 
-                                    FeedbackCard(
-                                        type = FeedbackType.GOOD,
-                                        title = "良かった点",
-                                        content = feedback.goodPoints
-                                    )
+                                    feedback.goodPoints?.let { goodPoints ->
+                                        FeedbackCard(
+                                            type = FeedbackType.GOOD,
+                                            title = "良かった点",
+                                            content = goodPoints
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                    }
 
-                                    Spacer(modifier = Modifier.height(12.dp))
+                                    feedback.improvement?.let { improvement ->
+                                        FeedbackCard(
+                                            type = FeedbackType.IMPROVEMENT,
+                                            title = "改善ポイント",
+                                            content = improvement
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                    }
 
-                                    FeedbackCard(
-                                        type = FeedbackType.IMPROVEMENT,
-                                        title = "改善ポイント",
-                                        content = feedback.improvement
-                                    )
-
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    FeedbackCard(
-                                        type = FeedbackType.EXAMPLE,
-                                        title = "お手本回答",
-                                        content = feedback.exampleAnswer
-                                    )
+                                    feedback.exampleAnswer?.let { exampleAnswer ->
+                                        FeedbackCard(
+                                            type = FeedbackType.EXAMPLE,
+                                            title = "お手本回答",
+                                            content = exampleAnswer
+                                        )
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.height(24.dp))

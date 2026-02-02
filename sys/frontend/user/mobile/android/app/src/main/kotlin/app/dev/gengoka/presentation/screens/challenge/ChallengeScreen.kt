@@ -83,7 +83,7 @@ fun ChallengeScreen(
                                     .padding(horizontal = 14.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = challenge.category.name,
+                                    text = challenge.category?.name ?: "",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = TextWhite
                                 )

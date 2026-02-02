@@ -84,12 +84,12 @@ data class AnswerWithDetailsDto(
 
 @Serializable
 data class AiFeedbackDto(
-    val score: Int,
+    val score: Int? = null,
     @SerialName("good_points")
-    val goodPoints: String,
-    val improvement: String,
+    val goodPoints: String? = null,
+    val improvement: String? = null,
     @SerialName("example_answer")
-    val exampleAnswer: String
+    val exampleAnswer: String? = null
 )
 
 @Serializable

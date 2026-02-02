@@ -39,7 +39,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "ゲンゴカ",
+                        text = "Gengoka",
                         style = MaterialTheme.typography.headlineLarge,
                         color = TextWhite
                     )
