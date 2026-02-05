@@ -5,6 +5,7 @@
 
 import Foundation
 
+
 @Observable
 final class HomeViewModel {
     var categories: [Category] = []
@@ -15,6 +16,7 @@ final class HomeViewModel {
 
     private let apiClient = APIClient.shared
 
+    
     func loadData() async {
         isLoading = true
         error = nil
@@ -24,11 +26,13 @@ final class HomeViewModel {
             async let statsTask: UserStats = apiClient.request(.userStats)
             async let dailyTask: [DailyChallenge] = apiClient.request(.dailyChallenges)
 
+            /*
             let (loadedCategories, loadedStats, loadedDaily) = try await (categoriesTask, statsTask, dailyTask)
 
             categories = loadedCategories
             userStats = loadedStats
             dailyChallenges = loadedDaily
+            */
         } catch {
             self.error = error
             // Use mock data for development

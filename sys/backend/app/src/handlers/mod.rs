@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod answer;
 pub mod category;
 pub mod challenge;

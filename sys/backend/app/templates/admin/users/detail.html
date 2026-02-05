@@ -1,0 +1,110 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}{{ user.name }} - Gengoka Admin{% endblock %}
+{% block nav_users %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="max-w-2xl">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">User Details</h1>
+        <div class="flex gap-2">
+            {% if is_suspended %}
+            <form method="POST" action="/admin/users/{{ user.id }}/unsuspend">
+                <button type="submit" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">
+                    Unsuspend
+                </button>
+            </form>
+            {% else %}
+            <a href="/admin/users/{{ user.id }}/suspend" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">
+                Suspend
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center mb-6">
+            {% match user.avatar %}
+            {% when Some with (avatar) %}
+            <img src="{{ avatar }}" alt="" class="w-16 h-16 rounded-full mr-4">
+            {% when None %}
+            <div class="w-16 h-16 rounded-full bg-gray-300 mr-4"></div>
+            {% endmatch %}
+            <div>
+                <div class="text-xl font-bold">{{ user.name }}</div>
+                <div class="text-gray-500">{% match user.email %}{% when Some with (e) %}{{ e }}{% when None %}-{% endmatch %}</div>
+            </div>
+        </div>
+
+        {% if is_suspended %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Suspended</strong>
+            {% match suspended_reason %}
+            {% when Some with (reason) %}
+            <p class="mt-1">{{ reason }}</p>
+            {% when None %}
+            {% endmatch %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <div class="text-gray-500 text-sm">Status</div>
+                {% if is_suspended %}
+                <span class="text-xs px-2 py-1 rounded bg-red-100 text-red-800">Suspended</span>
+                {% else %}
+                <span class="text-xs px-2 py-1 rounded bg-green-100 text-green-800">{{ user.status }}</span>
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="text-gray-500 text-sm">Total Likes</div>
+                <div class="font-medium">{{ user.total_likes }}</div>
+            </div>
+
+            <div>
+                <div class="text-gray-500 text-sm">Answers</div>
+                <div class="font-medium">{{ answer_count }}</div>
+            </div>
+
+            <div>
+                <div class="text-gray-500 text-sm">Comments</div>
+                <div class="font-medium">{{ comment_count }}</div>
+            </div>
+
+            <div>
+                <div class="text-gray-500 text-sm">Followers</div>
+                <div class="font-medium">{{ follower_count }}</div>
+            </div>
+
+            <div>
+                <div class="text-gray-500 text-sm">Following</div>
+                <div class="font-medium">{{ following_count }}</div>
+            </div>
+        </div>
+
+        {% match user.bio %}
+        {% when Some with (bio) %}
+        <div class="mt-4 pt-4 border-t">
+            <div class="text-gray-500 text-sm mb-2">Bio</div>
+            <div>{{ bio }}</div>
+        </div>
+        {% when None %}
+        {% endmatch %}
+
+        <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm text-gray-500">
+            <div>
+                <div>Created</div>
+                <div>{{ user.created_at.format("%Y-%m-%d %H:%M") }}</div>
+            </div>
+            <div>
+                <div>Updated</div>
+                <div>{{ user.updated_at.format("%Y-%m-%d %H:%M") }}</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/admin/users" class="inline-block mt-4 text-blue-500 hover:underline">&larr; Back to Users</a>
+</div>
+{% endblock %}

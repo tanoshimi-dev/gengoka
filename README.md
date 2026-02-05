@@ -206,4 +206,4 @@ MIT
 
 ## Author
 
-たのしみdev with Claude Code
+たのしみdev

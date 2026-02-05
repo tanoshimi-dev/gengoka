@@ -1,0 +1,46 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Moderate Answer - Gengoka Admin{% endblock %}
+{% block nav_answers %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="max-w-2xl">
+    <h1 class="text-2xl font-bold mb-6">Moderate Answer</h1>
+
+    {% match error %}
+    {% when Some with (err) %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ err }}
+    </div>
+    {% when None %}
+    {% endmatch %}
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="mb-6">
+            <div class="text-gray-500 text-sm mb-2">Answer Content</div>
+            <div class="p-4 bg-gray-50 rounded">{{ answer.content }}</div>
+            <div class="text-sm text-gray-500 mt-2">by {{ user_name }}</div>
+        </div>
+
+        <form method="POST" action="/admin/answers/{{ answer.id }}/moderate">
+            <div class="mb-4">
+                <label for="reason" class="block text-gray-700 text-sm font-bold mb-2">Reason *</label>
+                <textarea id="reason" name="reason" required rows="3"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="Enter the reason for moderation..."></textarea>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit"
+                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Moderate Answer
+                </button>
+                <a href="/admin/answers/{{ answer.id }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

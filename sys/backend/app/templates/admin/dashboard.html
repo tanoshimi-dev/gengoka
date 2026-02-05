@@ -1,0 +1,87 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Dashboard - Gengoka Admin{% endblock %}
+{% block nav_dashboard %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Total Users</div>
+        <div class="text-3xl font-bold">{{ stats.total_users }}</div>
+        <div class="text-green-500 text-sm">+{{ stats.users_today }} today</div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Total Challenges</div>
+        <div class="text-3xl font-bold">{{ stats.total_challenges }}</div>
+        <div class="text-gray-400 text-sm">{{ stats.total_categories }} categories</div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Total Answers</div>
+        <div class="text-3xl font-bold">{{ stats.total_answers }}</div>
+        <div class="text-green-500 text-sm">+{{ stats.answers_today }} today</div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Total Comments</div>
+        <div class="text-3xl font-bold">{{ stats.total_comments }}</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent Users -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-4 border-b">
+            <h2 class="text-lg font-semibold">Recent Users</h2>
+        </div>
+        <div class="p-4">
+            {% if stats.recent_users.is_empty() %}
+            <p class="text-gray-500">No users yet</p>
+            {% else %}
+            <ul class="divide-y">
+                {% for user in stats.recent_users %}
+                <li class="py-2 flex justify-between items-center">
+                    <div>
+                        <div class="font-medium">{{ user.name }}</div>
+                        <div class="text-sm text-gray-500">{% match user.email %}{% when Some with (e) %}{{ e }}{% when None %}-{% endmatch %}</div>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded {% if user.status == "active" %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ user.status }}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <a href="/admin/users" class="block text-center text-blue-500 hover:underline mt-4">View all users</a>
+        </div>
+    </div>
+
+    <!-- Recent Answers -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-4 border-b">
+            <h2 class="text-lg font-semibold">Recent Answers</h2>
+        </div>
+        <div class="p-4">
+            {% if stats.recent_answers.is_empty() %}
+            <p class="text-gray-500">No answers yet</p>
+            {% else %}
+            <ul class="divide-y">
+                {% for answer in stats.recent_answers %}
+                <li class="py-2">
+                    <div class="text-sm text-gray-500">{{ answer.challenge_title }}</div>
+                    <div class="font-medium truncate">{{ answer.content }}</div>
+                    <div class="text-xs text-gray-400">by {{ answer.user_name }}</div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <a href="/admin/answers" class="block text-center text-blue-500 hover:underline mt-4">View all answers</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

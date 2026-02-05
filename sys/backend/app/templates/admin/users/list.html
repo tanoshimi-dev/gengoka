@@ -1,0 +1,84 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Users - Gengoka Admin{% endblock %}
+{% block nav_users %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<h1 class="text-2xl font-bold mb-6">Users</h1>
+
+<!-- Filters -->
+<form method="GET" class="mb-6">
+    <div class="flex gap-2">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search users..."
+            class="flex-1 border rounded px-3 py-2">
+        <select name="status" class="border rounded px-3 py-2">
+            <option value="">All Status</option>
+            <option value="active" {% if status_filter == "active" %}selected{% endif %}>Active</option>
+            <option value="suspended" {% if status_filter == "suspended" %}selected{% endif %}>Suspended</option>
+        </select>
+        <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            Search
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Name</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Email</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Answers</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Likes</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for item in users %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    <div class="flex items-center">
+                        {% match item.user.avatar %}
+                        {% when Some with (avatar) %}
+                        <img src="{{ avatar }}" alt="" class="w-8 h-8 rounded-full mr-2">
+                        {% when None %}
+                        <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+                        {% endmatch %}
+                        {{ item.user.name }}
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-gray-500">{% match item.user.email %}{% when Some with (e) %}{{ e }}{% when None %}-{% endmatch %}</td>
+                <td class="px-4 py-3">{{ item.answer_count }}</td>
+                <td class="px-4 py-3">{{ item.user.total_likes }}</td>
+                <td class="px-4 py-3">
+                    {% if item.is_suspended %}
+                    <span class="text-xs px-2 py-1 rounded bg-red-100 text-red-800">Suspended</span>
+                    {% else %}
+                    <span class="text-xs px-2 py-1 rounded bg-green-100 text-green-800">{{ item.user.status }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <a href="/admin/users/{{ item.user.id }}" class="text-blue-500 hover:underline">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="flex justify-center gap-2 mt-6">
+    {% if has_prev %}
+    <a href="?page={{ page - 1 }}&search={{ search }}&status={{ status_filter }}" class="px-4 py-2 border rounded hover:bg-gray-100">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2">Page {{ page }} of {{ total_pages }}</span>
+    {% if has_next %}
+    <a href="?page={{ page + 1 }}&search={{ search }}&status={{ status_filter }}" class="px-4 py-2 border rounded hover:bg-gray-100">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

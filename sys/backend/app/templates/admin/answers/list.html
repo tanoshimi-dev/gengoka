@@ -1,0 +1,77 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Answers - Gengoka Admin{% endblock %}
+{% block nav_answers %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<h1 class="text-2xl font-bold mb-6">Answers</h1>
+
+<!-- Filters -->
+<form method="GET" class="mb-6">
+    <div class="flex gap-2">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search answers..."
+            class="flex-1 border rounded px-3 py-2">
+        <select name="status" class="border rounded px-3 py-2">
+            <option value="">All Status</option>
+            <option value="active" {% if status_filter == "active" %}selected{% endif %}>Active</option>
+            <option value="moderated" {% if status_filter == "moderated" %}selected{% endif %}>Moderated</option>
+        </select>
+        <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            Search
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Content</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">User</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Challenge</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Likes</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for item in answers %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 truncate max-w-xs">{{ item.answer.content }}</td>
+                <td class="px-4 py-3">{{ item.user_name }}</td>
+                <td class="px-4 py-3 truncate max-w-xs">{{ item.challenge_title }}</td>
+                <td class="px-4 py-3">{{ item.answer.like_count }}</td>
+                <td class="px-4 py-3">
+                    {% if item.is_moderated %}
+                    <span class="text-xs px-2 py-1 rounded bg-red-100 text-red-800">Moderated</span>
+                    {% else %}
+                    <span class="text-xs px-2 py-1 rounded bg-green-100 text-green-800">{{ item.answer.status }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <a href="/admin/answers/{{ item.answer.id }}" class="text-blue-500 hover:underline mr-2">View</a>
+                    {% if !item.is_moderated %}
+                    <a href="/admin/answers/{{ item.answer.id }}/moderate" class="text-orange-500 hover:underline">Moderate</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="flex justify-center gap-2 mt-6">
+    {% if has_prev %}
+    <a href="?page={{ page - 1 }}&search={{ search }}&status={{ status_filter }}" class="px-4 py-2 border rounded hover:bg-gray-100">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2">Page {{ page }} of {{ total_pages }}</span>
+    {% if has_next %}
+    <a href="?page={{ page + 1 }}&search={{ search }}&status={{ status_filter }}" class="px-4 py-2 border rounded hover:bg-gray-100">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

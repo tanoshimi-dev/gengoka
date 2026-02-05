@@ -198,5 +198,139 @@ pub async fn run_migrations(pool: &DbPool) {
         .await
         .ok();
 
+    // Admin Users table
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS admin_users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            role VARCHAR(20) NOT NULL DEFAULT 'admin',
+            last_login_at TIMESTAMPTZ,
+            status VARCHAR(20) NOT NULL DEFAULT 'active',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create admin_users table");
+
+    // Admin Audit Logs table
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS admin_audit_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            admin_user_id UUID NOT NULL REFERENCES admin_users(id),
+            action VARCHAR(50) NOT NULL,
+            entity_type VARCHAR(50) NOT NULL,
+            entity_id UUID,
+            details JSONB,
+            ip_address VARCHAR(45),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create admin_audit_logs table");
+
+    // System Configuration table
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS system_config (
+            key VARCHAR(100) PRIMARY KEY,
+            value JSONB NOT NULL,
+            description TEXT,
+            updated_by UUID REFERENCES admin_users(id),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create system_config table");
+
+    // Add moderation fields to users table
+    sqlx::query(
+        r#"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='suspended_at') THEN
+                ALTER TABLE users ADD COLUMN suspended_at TIMESTAMPTZ;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='suspended_reason') THEN
+                ALTER TABLE users ADD COLUMN suspended_reason TEXT;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='suspended_by') THEN
+                ALTER TABLE users ADD COLUMN suspended_by UUID REFERENCES admin_users(id);
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    // Add moderation fields to answers table
+    sqlx::query(
+        r#"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='answers' AND column_name='moderated_at') THEN
+                ALTER TABLE answers ADD COLUMN moderated_at TIMESTAMPTZ;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='answers' AND column_name='moderated_by') THEN
+                ALTER TABLE answers ADD COLUMN moderated_by UUID REFERENCES admin_users(id);
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='answers' AND column_name='moderation_reason') THEN
+                ALTER TABLE answers ADD COLUMN moderation_reason TEXT;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    // Add moderation fields to comments table
+    sqlx::query(
+        r#"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='moderated_at') THEN
+                ALTER TABLE comments ADD COLUMN moderated_at TIMESTAMPTZ;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='moderated_by') THEN
+                ALTER TABLE comments ADD COLUMN moderated_by UUID REFERENCES admin_users(id);
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='moderation_reason') THEN
+                ALTER TABLE comments ADD COLUMN moderation_reason TEXT;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    // Admin indexes
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_admin_user ON admin_audit_logs(admin_user_id)")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_created ON admin_audit_logs(created_at DESC)")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_entity ON admin_audit_logs(entity_type, entity_id)")
+        .execute(pool)
+        .await
+        .ok();
+
     info!("Migrations completed successfully");
 }

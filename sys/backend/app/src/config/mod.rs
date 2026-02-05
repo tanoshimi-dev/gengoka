@@ -5,6 +5,15 @@ pub struct Config {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
     pub pagination: PaginationConfig,
+    pub gemini: GeminiConfig,
+    pub challenge_generation: ChallengeGenerationConfig,
+    pub admin: AdminConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct AdminConfig {
+    pub session_secret: String,
+    pub session_ttl_hours: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +36,22 @@ pub struct DatabaseConfig {
 pub struct PaginationConfig {
     pub default_page_size: i64,
     pub max_page_size: i64,
+}
+
+#[derive(Debug, Clone)]
+pub struct GeminiConfig {
+    pub api_key: String,
+    pub model: String,
+    pub base_url: String,
+    pub max_tokens: i32,
+    pub temperature: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct ChallengeGenerationConfig {
+    pub enabled: bool,
+    pub daily_count: u32,
+    pub cron_schedule: String,
 }
 
 impl Config {
@@ -64,6 +89,44 @@ impl Config {
                     .unwrap_or_else(|_| "100".to_string())
                     .parse()
                     .unwrap_or(100),
+            },
+            gemini: GeminiConfig {
+                api_key: env::var("GEMINI_API_KEY").unwrap_or_default(),
+                model: env::var("GEMINI_MODEL")
+                    .unwrap_or_else(|_| "gemini-1.5-flash".to_string()),
+                base_url: env::var("GEMINI_BASE_URL")
+                    .unwrap_or_else(|_| "https://generativelanguage.googleapis.com".to_string()),
+                max_tokens: env::var("GEMINI_MAX_TOKENS")
+                    .unwrap_or_else(|_| "2048".to_string())
+                    .parse()
+                    .unwrap_or(2048),
+                temperature: env::var("GEMINI_TEMPERATURE")
+                    .unwrap_or_else(|_| "0.7".to_string())
+                    .parse()
+                    .unwrap_or(0.7),
+            },
+            challenge_generation: ChallengeGenerationConfig {
+                enabled: env::var("CHALLENGE_GENERATION_ENABLED")
+                    .unwrap_or_else(|_| "false".to_string())
+                    .parse()
+                    .unwrap_or(false),
+                daily_count: env::var("CHALLENGE_GENERATION_COUNT")
+                    .unwrap_or_else(|_| "5".to_string())
+                    .parse()
+                    .unwrap_or(5),
+                cron_schedule: env::var("CHALLENGE_GENERATION_CRON")
+                    .unwrap_or_else(|_| "0 0 9 * * *".to_string()),
+            },
+            admin: AdminConfig {
+                session_secret: env::var("ADMIN_SESSION_SECRET")
+                    .unwrap_or_else(|_| {
+                        // Default secret for development - MUST be set in production!
+                        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()
+                    }),
+                session_ttl_hours: env::var("ADMIN_SESSION_TTL_HOURS")
+                    .unwrap_or_else(|_| "24".to_string())
+                    .parse()
+                    .unwrap_or(24),
             },
         }
     }

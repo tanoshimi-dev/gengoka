@@ -1,0 +1,82 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Categories - Gengoka Admin{% endblock %}
+{% block nav_categories %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Categories</h1>
+    <a href="/admin/categories/new" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        New Category
+    </a>
+</div>
+
+<!-- Search -->
+<form method="GET" class="mb-6">
+    <div class="flex gap-2">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search categories..."
+            class="flex-1 border rounded px-3 py-2">
+        <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            Search
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Name</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Description</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Char Limit</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for category in categories %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    <div class="flex items-center">
+                        {% match category.color %}
+                        {% when Some with (color) %}
+                        <span class="w-3 h-3 rounded-full mr-2" style="background-color: {{ color }}"></span>
+                        {% when None %}
+                        {% endmatch %}
+                        {{ category.name }}
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-gray-500 truncate max-w-xs">
+                    {% match category.description %}{% when Some with (d) %}{{ d }}{% when None %}-{% endmatch %}
+                </td>
+                <td class="px-4 py-3">{{ category.char_limit }}</td>
+                <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-1 rounded {% if category.status == "active" %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ category.status }}
+                    </span>
+                </td>
+                <td class="px-4 py-3">
+                    <a href="/admin/categories/{{ category.id }}" class="text-blue-500 hover:underline mr-2">View</a>
+                    <a href="/admin/categories/{{ category.id }}/edit" class="text-green-500 hover:underline">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="flex justify-center gap-2 mt-6">
+    {% if has_prev %}
+    <a href="?page={{ page - 1 }}&search={{ search }}" class="px-4 py-2 border rounded hover:bg-gray-100">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2">Page {{ page }} of {{ total_pages }}</span>
+    {% if has_next %}
+    <a href="?page={{ page + 1 }}&search={{ search }}" class="px-4 py-2 border rounded hover:bg-gray-100">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

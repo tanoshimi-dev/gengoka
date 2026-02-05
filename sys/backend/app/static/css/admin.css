@@ -1,0 +1,98 @@
+/* Admin Dashboard Custom Styles */
+
+/* Ensure sidebar doesn't scroll with page */
+nav {
+    position: relative;
+}
+
+nav > div:last-child {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+/* Table hover effects */
+tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Form focus states */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Button transitions */
+button,
+a.bg-blue-500,
+a.bg-green-500,
+a.bg-red-500,
+a.bg-orange-500,
+a.bg-gray-300,
+a.bg-gray-500 {
+    transition: all 0.15s ease-in-out;
+}
+
+/* Card shadows */
+.shadow {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Loading states */
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+
+/* Alert animations */
+.bg-green-100,
+.bg-red-100,
+.bg-yellow-50 {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+}

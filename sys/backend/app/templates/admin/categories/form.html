@@ -1,0 +1,93 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}{% if is_edit %}Edit{% else %}New{% endif %} Category - Gengoka Admin{% endblock %}
+{% block nav_categories %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="max-w-2xl">
+    <h1 class="text-2xl font-bold mb-6">{% if is_edit %}Edit Category{% else %}New Category{% endif %}</h1>
+
+    {% match error %}
+    {% when Some with (err) %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ err }}
+    </div>
+    {% when None %}
+    {% endmatch %}
+
+    <form method="POST" action="{% match category %}{% when Some with (c) %}/admin/categories/{{ c.id }}{% when None %}/admin/categories{% endmatch %}" class="bg-white rounded-lg shadow p-6">
+        <div class="mb-4">
+            <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Name *</label>
+            <input type="text" id="name" name="name" required
+                value="{% match category %}{% when Some with (c) %}{{ c.name }}{% when None %}{% endmatch %}"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div class="mb-4">
+            <label for="description" class="block text-gray-700 text-sm font-bold mb-2">Description</label>
+            <textarea id="description" name="description" rows="3"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{% match category %}{% when Some with (c) %}{% match c.description %}{% when Some with (d) %}{{ d }}{% when None %}{% endmatch %}{% when None %}{% endmatch %}</textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="icon" class="block text-gray-700 text-sm font-bold mb-2">Icon</label>
+                <input type="text" id="icon" name="icon"
+                    value="{% match category %}{% when Some with (c) %}{% match c.icon %}{% when Some with (i) %}{{ i }}{% when None %}{% endmatch %}{% when None %}{% endmatch %}"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+
+            <div>
+                <label for="color" class="block text-gray-700 text-sm font-bold mb-2">Color</label>
+                <input type="text" id="color" name="color" placeholder="#3B82F6"
+                    value="{% match category %}{% when Some with (c) %}{% match c.color %}{% when Some with (col) %}{{ col }}{% when None %}{% endmatch %}{% when None %}{% endmatch %}"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="char_limit" class="block text-gray-700 text-sm font-bold mb-2">Character Limit</label>
+                <input type="number" id="char_limit" name="char_limit" min="1"
+                    value="{% match category %}{% when Some with (c) %}{{ c.char_limit }}{% when None %}30{% endmatch %}"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+
+            <div>
+                <label for="sort_order" class="block text-gray-700 text-sm font-bold mb-2">Sort Order</label>
+                <input type="number" id="sort_order" name="sort_order"
+                    value="{% match category %}{% when Some with (c) %}{{ c.sort_order }}{% when None %}0{% endmatch %}"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+        </div>
+
+        {% if is_edit %}
+        <div class="mb-6">
+            <label for="status" class="block text-gray-700 text-sm font-bold mb-2">Status</label>
+            <select id="status" name="status"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% match category %}
+                {% when Some with (c) %}
+                <option value="active" {% if c.status == "active" %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if c.status == "inactive" %}selected{% endif %}>Inactive</option>
+                {% when None %}
+                <option value="active" selected>Active</option>
+                <option value="inactive">Inactive</option>
+                {% endmatch %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div class="flex gap-4">
+            <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                {% if is_edit %}Update{% else %}Create{% endif %}
+            </button>
+            <a href="/admin/categories" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

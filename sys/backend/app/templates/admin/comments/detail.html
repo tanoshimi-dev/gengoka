@@ -1,0 +1,83 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Comment - Gengoka Admin{% endblock %}
+{% block nav_comments %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="max-w-2xl">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Comment Details</h1>
+        <div class="flex gap-2">
+            {% if is_moderated %}
+            <form method="POST" action="/admin/comments/{{ comment.id }}/unmoderate">
+                <button type="submit" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">
+                    Remove Moderation
+                </button>
+            </form>
+            {% else %}
+            <a href="/admin/comments/{{ comment.id }}/moderate" class="bg-orange-500 hover:bg-orange-700 text-white px-4 py-2 rounded">
+                Moderate
+            </a>
+            {% endif %}
+            <form method="POST" action="/admin/comments/{{ comment.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this comment?')">
+                <button type="submit" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        {% if is_moderated %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Moderated</strong>
+            {% match moderation_reason %}
+            {% when Some with (reason) %}
+            <p class="mt-1">{{ reason }}</p>
+            {% when None %}
+            {% endmatch %}
+        </div>
+        {% endif %}
+
+        <div class="mb-4">
+            <div class="text-gray-500 text-sm">Content</div>
+            <div class="text-lg p-4 bg-gray-50 rounded mt-2">{{ comment.content }}</div>
+        </div>
+
+        <div class="mb-4">
+            <div class="text-gray-500 text-sm">Related Answer</div>
+            <div class="p-4 bg-gray-100 rounded mt-2 text-sm">{{ answer_preview }}</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <div class="text-gray-500 text-sm">User</div>
+                <div class="font-medium">{{ user_name }}</div>
+            </div>
+
+            <div>
+                <div class="text-gray-500 text-sm">Status</div>
+                {% if is_moderated %}
+                <span class="text-xs px-2 py-1 rounded bg-red-100 text-red-800">Moderated</span>
+                {% else %}
+                <span class="text-xs px-2 py-1 rounded bg-green-100 text-green-800">{{ comment.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm text-gray-500">
+            <div>
+                <div>Created</div>
+                <div>{{ comment.created_at.format("%Y-%m-%d %H:%M") }}</div>
+            </div>
+            <div>
+                <div>Updated</div>
+                <div>{{ comment.updated_at.format("%Y-%m-%d %H:%M") }}</div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/admin/comments" class="inline-block mt-4 text-blue-500 hover:underline">&larr; Back to Comments</a>
+</div>
+{% endblock %}

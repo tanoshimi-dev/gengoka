@@ -5,19 +5,13 @@ RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/li
 
 WORKDIR /app
 
-# Copy manifests
+# Copy all source files
 COPY Cargo.toml Cargo.lock* ./
-
-# Create dummy main to build dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release
-RUN rm -rf src
-
-# Copy source code
+COPY askama.toml ./
 COPY src ./src
+COPY templates ./templates
 
 # Build application
-RUN touch src/main.rs
 RUN cargo build --release
 
 # Runtime stage
@@ -29,6 +23,9 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/target/release/gengoka-backend .
+
+# Copy static files for admin panel
+COPY static ./static
 
 # Set environment
 ENV TZ=Asia/Tokyo

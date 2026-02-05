@@ -1,0 +1,81 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Challenges - Gengoka Admin{% endblock %}
+{% block nav_challenges %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Challenges</h1>
+    <a href="/admin/challenges/new" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        New Challenge
+    </a>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="mb-6">
+    <div class="flex gap-2">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search challenges..."
+            class="flex-1 border rounded px-3 py-2">
+        <select name="status" class="border rounded px-3 py-2">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if cat.id.to_string() == category_filter %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            Search
+        </button>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Title</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Category</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Release Date</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Answers</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for item in challenges %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 truncate max-w-xs">{{ item.challenge.title }}</td>
+                <td class="px-4 py-3">{{ item.category_name }}</td>
+                <td class="px-4 py-3">
+                    {% match item.challenge.release_date %}{% when Some with (d) %}{{ d }}{% when None %}-{% endmatch %}
+                </td>
+                <td class="px-4 py-3">{{ item.challenge.answer_count }}</td>
+                <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-1 rounded {% if item.challenge.status == "active" %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ item.challenge.status }}
+                    </span>
+                </td>
+                <td class="px-4 py-3">
+                    <a href="/admin/challenges/{{ item.challenge.id }}" class="text-blue-500 hover:underline mr-2">View</a>
+                    <a href="/admin/challenges/{{ item.challenge.id }}/edit" class="text-green-500 hover:underline">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="flex justify-center gap-2 mt-6">
+    {% if has_prev %}
+    <a href="?page={{ page - 1 }}&search={{ search }}" class="px-4 py-2 border rounded hover:bg-gray-100">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2">Page {{ page }} of {{ total_pages }}</span>
+    {% if has_next %}
+    <a href="?page={{ page + 1 }}&search={{ search }}" class="px-4 py-2 border rounded hover:bg-gray-100">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
