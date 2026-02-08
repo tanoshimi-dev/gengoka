@@ -1,0 +1,373 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Bulk Register Challenges - Gengoka Admin{% endblock %}
+{% block nav_challenges %}bg-gray-700{% endblock %}
+{% block admin_name %}{{ admin.name }}{% endblock %}
+
+{% block main %}
+<div class="max-w-4xl">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Bulk Register Challenges</h1>
+        <a href="/admin/challenges" class="text-blue-500 hover:text-blue-700">Back to Challenges</a>
+    </div>
+
+    <!-- Category Rows -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Select Categories & Counts</h2>
+
+        <div id="category-rows">
+            <div class="category-row flex items-center gap-4 mb-3">
+                <select class="category-select shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-1" required>
+                    <option value="">Select a category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" class="count-input shadow appearance-none border rounded w-24 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" min="1" max="20" value="3" placeholder="Count">
+                <button type="button" class="remove-row-btn text-red-500 hover:text-red-700 font-bold px-2" title="Remove row">✕</button>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-4">
+            <button type="button" id="add-row-btn" class="text-blue-500 hover:text-blue-700 text-sm font-semibold">+ Add Category</button>
+            <div id="total-summary" class="text-sm text-gray-600"></div>
+        </div>
+
+        <div class="mt-6 flex gap-4">
+            <button type="button" id="generate-btn"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline">
+                Create Challenge
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="hidden bg-white rounded-lg shadow p-6 mb-6 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+        <p class="text-gray-600">Generating challenges with AI...</p>
+    </div>
+
+    <!-- Error Display -->
+    <div id="error-area" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6"></div>
+
+    <!-- Preview Section -->
+    <div id="preview-section" class="hidden">
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Generated Challenges (<span id="preview-count">0</span>)</h2>
+                <div class="flex gap-4">
+                    <button type="button" id="regenerate-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                        Re-generate
+                    </button>
+                    <button type="button" id="save-btn"
+                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
+                        Save to Database
+                    </button>
+                </div>
+            </div>
+
+            <div id="preview-list" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- Save Result -->
+    <div id="save-result" class="hidden rounded-lg shadow p-6 mb-6">
+        <div class="flex items-center mb-3">
+            <span id="save-result-icon" class="text-3xl mr-3"></span>
+            <h2 id="save-result-title" class="text-xl font-bold"></h2>
+        </div>
+        <p id="save-result-message" class="mb-4"></p>
+        <a href="/admin/challenges" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            View Challenges List
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var categoriesData = [
+        {% for cat in categories %}
+        { id: "{{ cat.id }}", name: "{{ cat.name }}" },
+        {% endfor %}
+    ];
+
+    var generatedChallenges = [];
+
+    var generateBtn = document.getElementById('generate-btn');
+    var addRowBtn = document.getElementById('add-row-btn');
+    var regenerateBtn = document.getElementById('regenerate-btn');
+    var saveBtn = document.getElementById('save-btn');
+    var loadingEl = document.getElementById('loading');
+    var errorArea = document.getElementById('error-area');
+    var previewSection = document.getElementById('preview-section');
+    var previewCount = document.getElementById('preview-count');
+    var previewList = document.getElementById('preview-list');
+    var saveResult = document.getElementById('save-result');
+    var saveResultIcon = document.getElementById('save-result-icon');
+    var saveResultTitle = document.getElementById('save-result-title');
+    var saveResultMessage = document.getElementById('save-result-message');
+    var totalSummary = document.getElementById('total-summary');
+    var categoryRows = document.getElementById('category-rows');
+
+    function buildCategoryOptions() {
+        var html = '<option value="">Select a category</option>';
+        for (var i = 0; i < categoriesData.length; i++) {
+            var cat = categoriesData[i];
+            html += '<option value="' + cat.id + '">' + cat.name + '</option>';
+        }
+        return html;
+    }
+
+    function addRow() {
+        var div = document.createElement('div');
+        div.className = 'category-row flex items-center gap-4 mb-3';
+        div.innerHTML =
+            '<select class="category-select shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-1" required>' +
+                buildCategoryOptions() +
+            '</select>' +
+            '<input type="number" class="count-input shadow appearance-none border rounded w-24 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" min="1" max="20" value="3" placeholder="Count">' +
+            '<button type="button" class="remove-row-btn text-red-500 hover:text-red-700 font-bold px-2" title="Remove row">✕</button>';
+        categoryRows.appendChild(div);
+        updateSummary();
+    }
+
+    function removeRow(btn) {
+        var rows = document.querySelectorAll('.category-row');
+        if (rows.length <= 1) return;
+        btn.closest('.category-row').remove();
+        updateSummary();
+    }
+
+    function updateSummary() {
+        var rows = document.querySelectorAll('.category-row');
+        var totalCount = 0;
+        var categoryCount = 0;
+        rows.forEach(function(row) {
+            var select = row.querySelector('.category-select');
+            var input = row.querySelector('.count-input');
+            if (select.value) {
+                categoryCount++;
+                totalCount += parseInt(input.value) || 0;
+            }
+        });
+        totalSummary.textContent =
+            categoryCount > 0 ? categoryCount + ' categories, ' + totalCount + ' challenges total' : '';
+    }
+
+    document.addEventListener('input', updateSummary);
+    document.addEventListener('change', updateSummary);
+
+    categoryRows.addEventListener('click', function(e) {
+        var btn = e.target.closest('.remove-row-btn');
+        if (btn) removeRow(btn);
+    });
+
+    function getItems() {
+        var rows = document.querySelectorAll('.category-row');
+        var items = [];
+        var seenCategories = {};
+        var hasError = false;
+
+        rows.forEach(function(row) {
+            var select = row.querySelector('.category-select');
+            var input = row.querySelector('.count-input');
+            var categoryId = select.value;
+            var count = parseInt(input.value) || 0;
+
+            select.classList.remove('border-red-500');
+            input.classList.remove('border-red-500');
+
+            if (!categoryId) {
+                select.classList.add('border-red-500');
+                hasError = true;
+                return;
+            }
+
+            if (seenCategories[categoryId]) {
+                select.classList.add('border-red-500');
+                showError('Duplicate categories are not allowed.');
+                hasError = true;
+                return;
+            }
+
+            if (count < 1) {
+                input.classList.add('border-red-500');
+                hasError = true;
+                return;
+            }
+
+            seenCategories[categoryId] = true;
+            items.push({ category_id: categoryId, count: count });
+        });
+
+        if (hasError) return null;
+        return items;
+    }
+
+    function showError(msg) {
+        errorArea.textContent = msg;
+        errorArea.classList.remove('hidden');
+    }
+
+    function hideError() {
+        errorArea.classList.add('hidden');
+    }
+
+    function showSaveResult(success, title, message) {
+        saveResult.className = success
+            ? 'rounded-lg shadow p-6 mb-6 bg-green-50 border border-green-400'
+            : 'rounded-lg shadow p-6 mb-6 bg-red-50 border border-red-400';
+        saveResultIcon.textContent = success ? '\u2705' : '\u274C';
+        saveResultTitle.textContent = title;
+        saveResultTitle.className = success
+            ? 'text-xl font-bold text-green-800'
+            : 'text-xl font-bold text-red-800';
+        saveResultMessage.textContent = message;
+        saveResultMessage.className = success ? 'mb-4 text-green-700' : 'mb-4 text-red-700';
+        saveResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function doGenerate() {
+        hideError();
+        var items = getItems();
+        if (!items) return;
+
+        loadingEl.classList.remove('hidden');
+        generateBtn.disabled = true;
+        generateBtn.classList.add('opacity-50');
+        previewSection.classList.add('hidden');
+        saveResult.className = 'hidden';
+
+        fetch('/admin/challenges/bulk-generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: items })
+        })
+        .then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, data: data };
+            });
+        })
+        .then(function(result) {
+            if (!result.ok) {
+                showError(result.data.error || 'Generation failed');
+                return;
+            }
+            generatedChallenges = result.data.challenges;
+            renderPreview(result.data.challenges);
+            previewSection.classList.remove('hidden');
+        })
+        .catch(function(e) {
+            showError('Network error: ' + e.message);
+        })
+        .finally(function() {
+            loadingEl.classList.add('hidden');
+            generateBtn.disabled = false;
+            generateBtn.classList.remove('opacity-50');
+        });
+    }
+
+    function renderPreview(challenges) {
+        previewCount.textContent = challenges.length;
+        previewList.innerHTML = '';
+
+        var currentCategory = '';
+        for (var i = 0; i < challenges.length; i++) {
+            var ch = challenges[i];
+            if (ch.category_name !== currentCategory) {
+                currentCategory = ch.category_name;
+                var header = document.createElement('div');
+                header.className = 'bg-gray-100 px-4 py-2 rounded font-semibold text-gray-700 mt-2';
+                header.textContent = currentCategory;
+                previewList.appendChild(header);
+            }
+
+            var item = document.createElement('div');
+            item.className = 'border rounded p-4 ml-2';
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'flex items-start justify-between';
+
+            var content = document.createElement('div');
+            content.className = 'flex-1';
+
+            var titleDiv = document.createElement('div');
+            titleDiv.className = 'font-medium text-gray-900';
+            titleDiv.textContent = ch.title;
+
+            var descDiv = document.createElement('div');
+            descDiv.className = 'text-sm text-gray-600 mt-1';
+            descDiv.textContent = ch.description;
+
+            content.appendChild(titleDiv);
+            content.appendChild(descDiv);
+
+            var badge = document.createElement('span');
+            badge.className = 'ml-4 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded whitespace-nowrap';
+            badge.textContent = ch.char_limit + ' chars';
+
+            wrapper.appendChild(content);
+            wrapper.appendChild(badge);
+            item.appendChild(wrapper);
+            previewList.appendChild(item);
+        }
+    }
+
+    function doSave() {
+        hideError();
+        if (generatedChallenges.length === 0) {
+            showError('No challenges to save. Generate first.');
+            return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.classList.add('opacity-50');
+        saveBtn.textContent = 'Saving...';
+
+        var payload = generatedChallenges.map(function(ch) {
+            return {
+                category_id: ch.category_id,
+                title: ch.title,
+                description: ch.description,
+                char_limit: ch.char_limit
+            };
+        });
+
+        fetch('/admin/challenges/bulk-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ challenges: payload })
+        })
+        .then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, data: data };
+            });
+        })
+        .then(function(result) {
+            if (!result.ok) {
+                showSaveResult(false, 'Save Failed', result.data.error || 'Failed to save challenges.');
+                return;
+            }
+            showSaveResult(true, 'Save Complete', 'Successfully saved ' + result.data.saved_count + ' challenges to the database.');
+            previewSection.classList.add('hidden');
+            generatedChallenges = [];
+        })
+        .catch(function(e) {
+            showSaveResult(false, 'Save Failed', 'Network error: ' + e.message);
+        })
+        .finally(function() {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-50');
+            saveBtn.textContent = 'Save to Database';
+        });
+    }
+
+    addRowBtn.addEventListener('click', addRow);
+    generateBtn.addEventListener('click', doGenerate);
+    regenerateBtn.addEventListener('click', doGenerate);
+    saveBtn.addEventListener('click', doSave);
+
+    updateSummary();
+});
+</script>
+{% endblock %}

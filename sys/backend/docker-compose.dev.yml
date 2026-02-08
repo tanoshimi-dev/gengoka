@@ -35,13 +35,10 @@ services:
       context: ./app
       dockerfile: Dockerfile
     container_name: gengoka-backend
+    env_file:
+      - .env
     environment:
-      - SERVER_PORT=8080
       - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=gengoka
-      - DB_PASSWORD=gengoka_password
-      - DB_NAME=gengoka_db
       - RUST_LOG=debug
     ports:
       - "8080:8080"

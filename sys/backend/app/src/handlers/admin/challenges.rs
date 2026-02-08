@@ -5,9 +5,15 @@ use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
+use crate::config::Config;
 use crate::middleware::admin_auth::get_admin_user_id;
-use crate::models::admin::{AdminCreateChallengeRequest, AdminPaginationParams, AdminUpdateChallengeRequest, AdminUser};
+use crate::models::admin::{
+    AdminCreateChallengeRequest, AdminPaginationParams, AdminUpdateChallengeRequest, AdminUser,
+    BulkGenerateRequest, BulkGenerateResponse, BulkGeneratedChallengeItem,
+    BulkSaveRequest, BulkSaveResponse,
+};
 use crate::models::{Category, Challenge};
+use crate::services::gemini::{build_challenge_prompt, GeminiClient};
 
 #[derive(FromRow)]
 struct ChallengeRow {
@@ -487,6 +493,186 @@ pub async fn delete_challenge(
     HttpResponse::Found()
         .insert_header(("Location", "/admin/challenges"))
         .finish()
+}
+
+// ============ Bulk Challenge Generation ============
+
+#[derive(Template)]
+#[template(path = "admin/challenges/bulk.html")]
+pub struct ChallengeBulkTemplate {
+    pub admin: AdminUser,
+    pub categories: Vec<Category>,
+}
+
+pub async fn bulk_challenge_form(pool: web::Data<PgPool>, session: Session) -> HttpResponse {
+    let admin = match get_admin_from_session(&pool, &session).await {
+        Some(a) => a,
+        None => return redirect_to_login(),
+    };
+
+    let categories = sqlx::query_as::<_, Category>(
+        r#"SELECT * FROM categories WHERE status = 'active' ORDER BY name"#,
+    )
+    .fetch_all(pool.get_ref())
+    .await
+    .unwrap_or_default();
+
+    let template = ChallengeBulkTemplate { admin, categories };
+
+    HttpResponse::Ok()
+        .content_type("text/html")
+        .body(template.render().unwrap_or_default())
+}
+
+pub async fn bulk_generate_challenges(
+    pool: web::Data<PgPool>,
+    session: Session,
+    config: web::Data<Config>,
+    body: web::Json<BulkGenerateRequest>,
+) -> HttpResponse {
+    if get_admin_from_session(&pool, &session).await.is_none() {
+        return HttpResponse::Unauthorized().json(serde_json::json!({"error": "Unauthorized"}));
+    }
+
+    if body.items.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({"error": "No categories specified"}));
+    }
+
+    let gemini_client = match GeminiClient::new(config.gemini.clone()) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("Failed to create Gemini client: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to initialize AI client"}));
+        }
+    };
+
+    // Fetch all requested categories
+    let category_ids: Vec<Uuid> = body.items.iter().map(|i| i.category_id).collect();
+    let categories = sqlx::query_as::<_, Category>(
+        r#"SELECT * FROM categories WHERE id = ANY($1) AND status = 'active'"#,
+    )
+    .bind(&category_ids)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    let categories = match categories {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("Failed to fetch categories: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Failed to fetch categories"}));
+        }
+    };
+
+    let category_map: std::collections::HashMap<Uuid, &Category> =
+        categories.iter().map(|c| (c.id, c)).collect();
+
+    let mut all_challenges = Vec::new();
+
+    for item in &body.items {
+        let category = match category_map.get(&item.category_id) {
+            Some(c) => *c,
+            None => {
+                tracing::warn!("Category not found: {}", item.category_id);
+                continue;
+            }
+        };
+
+        let prompt = build_challenge_prompt(category, item.count);
+
+        match gemini_client.generate_challenges(prompt).await {
+            Ok(response) => {
+                for challenge in response.challenges {
+                    all_challenges.push(BulkGeneratedChallengeItem {
+                        category_id: category.id,
+                        category_name: category.name.clone(),
+                        title: challenge.title,
+                        description: challenge.description,
+                        char_limit: challenge.char_limit,
+                    });
+                }
+            }
+            Err(e) => {
+                tracing::error!(
+                    "Failed to generate challenges for category {}: {}",
+                    category.name,
+                    e
+                );
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("AI generation failed for category '{}': {}", category.name, e)
+                }));
+            }
+        }
+    }
+
+    let total = all_challenges.len();
+    HttpResponse::Ok().json(BulkGenerateResponse {
+        challenges: all_challenges,
+        total,
+    })
+}
+
+pub async fn bulk_save_challenges(
+    pool: web::Data<PgPool>,
+    session: Session,
+    req: HttpRequest,
+    body: web::Json<BulkSaveRequest>,
+) -> HttpResponse {
+    let admin = match get_admin_from_session(&pool, &session).await {
+        Some(a) => a,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": "Unauthorized"}))
+        }
+    };
+
+    if body.challenges.is_empty() {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({"error": "No challenges to save"}));
+    }
+
+    let today = Utc::now().date_naive();
+    let now = Utc::now();
+    let mut saved_count = 0usize;
+
+    for challenge in &body.challenges {
+        let result = sqlx::query_scalar::<_, Uuid>(
+            r#"
+            INSERT INTO challenges (category_id, title, description, char_limit, release_date, status, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, 'active', $6, $6)
+            RETURNING id
+            "#,
+        )
+        .bind(challenge.category_id)
+        .bind(&challenge.title)
+        .bind(&challenge.description)
+        .bind(challenge.char_limit)
+        .bind(today)
+        .bind(now)
+        .fetch_one(pool.get_ref())
+        .await;
+
+        match result {
+            Ok(challenge_id) => {
+                saved_count += 1;
+                log_audit(
+                    &pool,
+                    admin.id,
+                    "bulk_create",
+                    "challenge",
+                    Some(challenge_id),
+                    &req,
+                )
+                .await;
+            }
+            Err(e) => {
+                tracing::error!("Failed to save challenge '{}': {}", challenge.title, e);
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(BulkSaveResponse { saved_count })
 }
 
 // Helper functions

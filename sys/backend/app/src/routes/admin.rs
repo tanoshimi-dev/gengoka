@@ -28,6 +28,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     // Challenges
                     .route("/challenges", web::get().to(admin::list_challenges))
                     .route("/challenges/new", web::get().to(admin::new_challenge_form))
+                    .route("/challenges/bulk", web::get().to(admin::bulk_challenge_form))
+                    .route("/challenges/bulk-generate", web::post().to(admin::bulk_generate_challenges))
+                    .route("/challenges/bulk-save", web::post().to(admin::bulk_save_challenges))
                     .route("/challenges", web::post().to(admin::create_challenge))
                     .route("/challenges/{id}", web::get().to(admin::get_challenge))
                     .route("/challenges/{id}/edit", web::get().to(admin::edit_challenge_form))

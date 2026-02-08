@@ -223,6 +223,52 @@ pub struct SchedulerSettings {
     pub cron_schedule: String,
 }
 
+// ============ Bulk Challenge Generation ============
+
+#[derive(Debug, Deserialize)]
+pub struct BulkGenerateCategoryItem {
+    pub category_id: Uuid,
+    pub count: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BulkGenerateRequest {
+    pub items: Vec<BulkGenerateCategoryItem>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BulkGeneratedChallengeItem {
+    pub category_id: Uuid,
+    pub category_name: String,
+    pub title: String,
+    pub description: String,
+    pub char_limit: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BulkGenerateResponse {
+    pub challenges: Vec<BulkGeneratedChallengeItem>,
+    pub total: usize,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BulkSaveChallengeItem {
+    pub category_id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub char_limit: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BulkSaveRequest {
+    pub challenges: Vec<BulkSaveChallengeItem>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BulkSaveResponse {
+    pub saved_count: usize,
+}
+
 // ============ Pagination ============
 
 #[derive(Debug, Deserialize)]
