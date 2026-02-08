@@ -6,7 +6,7 @@ A training app to improve your ability to express thoughts in words.
 
 ## Overview
 
-ゲンゴカは、限られた文字数で的確に表現する力を養うトレーニングアプリです。AIが出題するお題に対して、制限文字数内で回答し、フィードバックを受けることで言語化スキルを向上させます。
+gengoka.appは、限られた文字数で的確に表現する力を養うトレーニングアプリです。AIが出題するお題に対して、制限文字数内で回答し、フィードバックを受けることで言語化スキルを向上させます。
 
 ## Features
 
