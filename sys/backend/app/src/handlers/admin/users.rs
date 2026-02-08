@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::middleware::admin_auth::get_admin_user_id;
-use crate::models::admin::{AdminPaginationParams, AdminUser, SuspendUserRequest};
+use crate::models::admin::{AdminPaginationParams, AdminUser, PageLink, SuspendUserRequest};
 use crate::models::User;
 
 #[derive(Template)]
@@ -16,9 +16,14 @@ pub struct UsersListTemplate {
     pub search: String,
     pub status_filter: String,
     pub page: i64,
+    pub page_size: i64,
+    pub total_count: i64,
     pub total_pages: i64,
+    pub showing_from: i64,
+    pub showing_to: i64,
     pub has_prev: bool,
     pub has_next: bool,
+    pub page_links: Vec<PageLink>,
 }
 
 pub struct UserWithStats {
@@ -173,15 +178,24 @@ pub async fn list_users(
         });
     }
 
+    let showing_from = if total.0 == 0 { 0 } else { (page - 1) * page_size + 1 };
+    let showing_to = (page * page_size).min(total.0);
+    let page_links = PageLink::generate(page, total_pages);
+
     let template = UsersListTemplate {
         admin,
         users: users_with_stats,
         search,
         status_filter,
         page,
+        page_size,
+        total_count: total.0,
         total_pages,
+        showing_from,
+        showing_to,
         has_prev: page > 1,
         has_next: page < total_pages,
+        page_links,
     };
 
     HttpResponse::Ok()

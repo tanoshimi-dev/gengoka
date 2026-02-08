@@ -278,3 +278,51 @@ pub struct AdminPaginationParams {
     pub search: Option<String>,
     pub status: Option<String>,
 }
+
+pub struct PageLink {
+    pub number: i64,
+    pub is_current: bool,
+    pub is_ellipsis: bool,
+}
+
+impl PageLink {
+    pub fn generate(current_page: i64, total_pages: i64) -> Vec<PageLink> {
+        let mut links = Vec::new();
+        if total_pages <= 7 {
+            for i in 1..=total_pages {
+                links.push(PageLink {
+                    number: i,
+                    is_current: i == current_page,
+                    is_ellipsis: false,
+                });
+            }
+        } else {
+            links.push(PageLink {
+                number: 1,
+                is_current: current_page == 1,
+                is_ellipsis: false,
+            });
+            if current_page > 3 {
+                links.push(PageLink { number: 0, is_current: false, is_ellipsis: true });
+            }
+            let start = (current_page - 1).max(2);
+            let end = (current_page + 1).min(total_pages - 1);
+            for i in start..=end {
+                links.push(PageLink {
+                    number: i,
+                    is_current: i == current_page,
+                    is_ellipsis: false,
+                });
+            }
+            if current_page < total_pages - 2 {
+                links.push(PageLink { number: 0, is_current: false, is_ellipsis: true });
+            }
+            links.push(PageLink {
+                number: total_pages,
+                is_current: current_page == total_pages,
+                is_ellipsis: false,
+            });
+        }
+        links
+    }
+}

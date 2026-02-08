@@ -70,15 +70,43 @@
 </div>
 
 <!-- Pagination -->
-{% if total_pages > 1 %}
-<div class="flex justify-center gap-2 mt-6">
-    {% if has_prev %}
-    <a href="?page={{ page - 1 }}&search={{ search }}&status={{ status_filter }}" class="px-4 py-2 border rounded hover:bg-gray-100">Previous</a>
+{% if total_count > 0 %}
+<div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+    <div class="text-sm text-gray-600">
+        Showing {{ showing_from }}-{{ showing_to }} of {{ total_count }} items
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="flex items-center gap-1">
+        {% if has_prev %}
+        <a href="?page={{ page - 1 }}&page_size={{ page_size }}&search={{ search }}&status={{ status_filter }}" class="px-3 py-1 border rounded hover:bg-gray-100 text-sm">Previous</a>
+        {% endif %}
+        {% for p in page_links %}
+        {% if p.is_ellipsis %}
+        <span class="px-2 py-1 text-sm text-gray-400">...</span>
+        {% else if p.is_current %}
+        <span class="px-3 py-1 bg-blue-500 text-white rounded text-sm">{{ p.number }}</span>
+        {% else %}
+        <a href="?page={{ p.number }}&page_size={{ page_size }}&search={{ search }}&status={{ status_filter }}" class="px-3 py-1 border rounded hover:bg-gray-100 text-sm">{{ p.number }}</a>
+        {% endif %}
+        {% endfor %}
+        {% if has_next %}
+        <a href="?page={{ page + 1 }}&page_size={{ page_size }}&search={{ search }}&status={{ status_filter }}" class="px-3 py-1 border rounded hover:bg-gray-100 text-sm">Next</a>
+        {% endif %}
+    </div>
     {% endif %}
-    <span class="px-4 py-2">Page {{ page }} of {{ total_pages }}</span>
-    {% if has_next %}
-    <a href="?page={{ page + 1 }}&search={{ search }}&status={{ status_filter }}" class="px-4 py-2 border rounded hover:bg-gray-100">Next</a>
-    {% endif %}
+
+    <form method="GET" class="flex items-center gap-2">
+        <input type="hidden" name="search" value="{{ search }}">
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <label class="text-sm text-gray-600">Per page:</label>
+        <select name="page_size" onchange="this.form.submit()" class="border rounded px-2 py-1 text-sm">
+            <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+            <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+            <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+        </select>
+    </form>
 </div>
 {% endif %}
 {% endblock %}
