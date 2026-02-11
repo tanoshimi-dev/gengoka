@@ -83,3 +83,20 @@ pub fn set_admin_session(session: &actix_session::Session, admin_user_id: uuid::
 pub fn clear_admin_session(session: &actix_session::Session) {
     session.purge();
 }
+
+pub fn set_2fa_pending_session(session: &actix_session::Session, user_id: uuid::Uuid) {
+    let _ = session.insert("admin_2fa_pending_user_id", user_id.to_string());
+}
+
+pub fn get_2fa_pending_user_id(session: &actix_session::Session) -> Option<uuid::Uuid> {
+    session
+        .get::<String>("admin_2fa_pending_user_id")
+        .ok()
+        .flatten()
+        .and_then(|s| uuid::Uuid::parse_str(&s).ok())
+}
+
+pub fn complete_2fa_session(session: &actix_session::Session, user_id: uuid::Uuid) {
+    session.remove("admin_2fa_pending_user_id");
+    let _ = session.insert("admin_user_id", user_id.to_string());
+}

@@ -332,5 +332,47 @@ pub async fn run_migrations(pool: &DbPool) {
         .await
         .ok();
 
+    // Add 2FA columns to admin_users
+    sqlx::query(
+        r#"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='admin_users' AND column_name='totp_secret') THEN
+                ALTER TABLE admin_users ADD COLUMN totp_secret VARCHAR(255);
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='admin_users' AND column_name='totp_enabled') THEN
+                ALTER TABLE admin_users ADD COLUMN totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='admin_users' AND column_name='totp_enabled_at') THEN
+                ALTER TABLE admin_users ADD COLUMN totp_enabled_at TIMESTAMPTZ;
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    // Admin 2FA backup codes table
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS admin_2fa_backup_codes (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            admin_user_id UUID NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+            code_hash VARCHAR(255) NOT NULL,
+            used_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create admin_2fa_backup_codes table");
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_admin_2fa_backup_codes_user ON admin_2fa_backup_codes(admin_user_id)")
+        .execute(pool)
+        .await
+        .ok();
+
     info!("Migrations completed successfully");
 }

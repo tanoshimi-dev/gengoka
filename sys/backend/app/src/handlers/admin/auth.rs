@@ -7,7 +7,7 @@ use argon2::{
 use askama::Template;
 use sqlx::PgPool;
 
-use crate::middleware::admin_auth::{clear_admin_session, set_admin_session};
+use crate::middleware::admin_auth::{clear_admin_session, get_2fa_pending_user_id, set_2fa_pending_session, set_admin_session};
 use crate::models::admin::{AdminUser, LoginRequest};
 
 #[derive(Template)]
@@ -21,6 +21,13 @@ pub async fn login_page(session: Session) -> HttpResponse {
     if session.get::<String>("admin_user_id").unwrap_or(None).is_some() {
         return HttpResponse::Found()
             .insert_header(("Location", "/admin"))
+            .finish();
+    }
+
+    // If 2FA verification is pending, redirect to verify page
+    if get_2fa_pending_user_id(&session).is_some() {
+        return HttpResponse::Found()
+            .insert_header(("Location", "/admin/2fa/verify"))
             .finish();
     }
 
@@ -100,7 +107,15 @@ pub async fn login_submit(
     .execute(pool.get_ref())
     .await;
 
-    // Set session
+    // Check if 2FA is enabled
+    if admin.totp_enabled {
+        set_2fa_pending_session(&session, admin.id);
+        return HttpResponse::Found()
+            .insert_header(("Location", "/admin/2fa/verify"))
+            .finish();
+    }
+
+    // Set session (no 2FA)
     set_admin_session(&session, admin.id);
 
     HttpResponse::Found()

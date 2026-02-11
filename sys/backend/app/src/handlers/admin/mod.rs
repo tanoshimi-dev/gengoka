@@ -5,6 +5,7 @@ pub mod challenges;
 pub mod comments;
 pub mod dashboard;
 pub mod settings;
+pub mod two_factor;
 pub mod users;
 
 pub use answers::*;
@@ -14,4 +15,5 @@ pub use challenges::*;
 pub use comments::*;
 pub use dashboard::*;
 pub use settings::*;
+pub use two_factor::*;
 pub use users::*;

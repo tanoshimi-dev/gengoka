@@ -18,6 +18,10 @@ pub struct AdminUser {
     pub status: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    #[serde(skip_serializing)]
+    pub totp_secret: Option<String>,
+    pub totp_enabled: bool,
+    pub totp_enabled_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -49,6 +53,11 @@ pub struct LoginRequest {
     pub email: String,
     #[validate(length(min = 8))]
     pub password: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TotpVerifyRequest {
+    pub code: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]

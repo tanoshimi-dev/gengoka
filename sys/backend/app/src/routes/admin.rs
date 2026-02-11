@@ -9,6 +9,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             // Public routes (no auth required)
             .route("/login", web::get().to(admin::login_page))
             .route("/login", web::post().to(admin::login_submit))
+            .route("/2fa/verify", web::get().to(admin::two_factor_verify_page))
+            .route("/2fa/verify", web::post().to(admin::two_factor_verify_submit))
             // Protected routes (auth required)
             .service(
                 web::scope("")
@@ -60,7 +62,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route("/settings/gemini", web::get().to(admin::gemini_settings_page))
                     .route("/settings/gemini", web::post().to(admin::update_gemini_settings))
                     .route("/settings/scheduler", web::get().to(admin::scheduler_settings_page))
-                    .route("/settings/scheduler", web::post().to(admin::update_scheduler_settings)),
+                    .route("/settings/scheduler", web::post().to(admin::update_scheduler_settings))
+                    // 2FA Settings
+                    .route("/settings/2fa", web::get().to(admin::two_factor_setup_page))
+                    .route("/settings/2fa/confirm", web::post().to(admin::two_factor_setup_confirm))
+                    .route("/settings/2fa/disable", web::post().to(admin::two_factor_disable)),
             ),
     );
 }

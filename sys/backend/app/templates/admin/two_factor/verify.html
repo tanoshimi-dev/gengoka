@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}2FA Verification - Gengoka Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-2">Two-Factor Authentication</h1>
+        <p class="text-gray-600 text-center mb-6">Enter the 6-digit code from your authenticator app</p>
+
+        {% match error %}
+        {% when Some with (err) %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ err }}
+        </div>
+        {% when None %}
+        {% endmatch %}
+
+        <form method="POST" action="/admin/2fa/verify">
+            <div class="mb-4">
+                <label for="code" class="block text-gray-700 text-sm font-bold mb-2">Verification Code</label>
+                <input type="text" id="code" name="code" required
+                    maxlength="8" autocomplete="one-time-code" inputmode="numeric"
+                    placeholder="000000"
+                    class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 text-center text-xl tracking-widest leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Verify
+            </button>
+        </form>
+
+        <div class="mt-6 pt-4 border-t border-gray-200">
+            <p class="text-gray-500 text-sm text-center mb-3">Lost access to your authenticator?</p>
+            <details class="text-center">
+                <summary class="text-blue-500 hover:text-blue-700 text-sm cursor-pointer">Use a backup code</summary>
+                <form method="POST" action="/admin/2fa/verify" class="mt-3">
+                    <div class="mb-3">
+                        <input type="text" name="code" required
+                            placeholder="Backup code"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 text-center leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Verify Backup Code
+                    </button>
+                </form>
+            </details>
+        </div>
+
+        <div class="mt-4 text-center">
+            <a href="/admin/login" class="text-gray-500 hover:text-gray-700 text-sm">Back to login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
