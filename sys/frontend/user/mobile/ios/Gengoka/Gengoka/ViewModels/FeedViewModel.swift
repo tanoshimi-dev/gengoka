@@ -23,13 +23,23 @@ final class FeedViewModel {
         currentPage = 1
 
         do {
-            let response: PaginatedResponse<FeedItem> = try await apiClient.request(.feed(page: 1, filter: currentFilter))
-            feedItems = response.items
-            hasMore = response.hasMore
+            // Backend returns FeedResponse with data array and pagination object (NOT wrapped in APIResponse)
+            let response: FeedResponse<FeedItem> = try await apiClient.request(.feed(page: 1, filter: currentFilter))
+            feedItems = response.data
+            hasMore = response.pagination.hasMore
+            
+            #if DEBUG
+            print("✅ Successfully loaded \(response.data.count) feed items")
+            print("📄 Page: \(response.pagination.page), Total: \(response.pagination.total), Has More: \(response.pagination.hasMore)")
+            #endif
         } catch {
+            #if DEBUG
+            print("❌ Failed to load feed: \(error)")
+            print("❌ Error details: \(error.localizedDescription)")
+            #endif
             self.error = error
-            // Use mock data for development
-            feedItems = createMockFeedItems()
+            feedItems = []
+            hasMore = false
         }
 
         isLoading = false
@@ -42,11 +52,21 @@ final class FeedViewModel {
         currentPage += 1
 
         do {
-            let response: PaginatedResponse<FeedItem> = try await apiClient.request(.feed(page: currentPage, filter: currentFilter))
-            feedItems.append(contentsOf: response.items)
-            hasMore = response.hasMore
+            // Backend returns FeedResponse
+            let response: FeedResponse<FeedItem> = try await apiClient.request(.feed(page: currentPage, filter: currentFilter))
+            feedItems.append(contentsOf: response.data)
+            hasMore = response.pagination.hasMore
+            
+            #if DEBUG
+            print("✅ Loaded \(response.data.count) more feed items (page \(currentPage))")
+            #endif
         } catch {
             currentPage -= 1
+            hasMore = false
+            
+            #if DEBUG
+            print("❌ Failed to load more feed items: \(error)")
+            #endif
         }
 
         isLoadingMore = false
@@ -97,50 +117,5 @@ final class FeedViewModel {
 
     func refresh() async {
         await loadFeed()
-    }
-
-    private func createMockFeedItems() -> [FeedItem] {
-        (0..<5).map { i in
-            FeedItem(
-                id: UUID(),
-                answer: Answer(
-                    id: UUID(),
-                    challengeId: UUID(),
-                    userId: UUID(),
-                    content: "今日の朝ごはんは、ふわふわの卵焼きと白いご飯、そして温かい味噌汁でした。シンプルだけど、心が落ち着く朝食です。",
-                    score: 85 + i,
-                    feedback: nil,
-                    isPublic: true,
-                    likeCount: 10 + i * 3,
-                    commentCount: 2 + i,
-                    createdAt: Date().addingTimeInterval(-Double(i * 3600))
-                ),
-                challenge: Challenge(
-                    id: UUID(),
-                    categoryId: UUID(),
-                    prompt: "今日の朝ごはんを50文字以内で説明してください。",
-                    description: nil,
-                    minCharacters: 20,
-                    maxCharacters: 50,
-                    difficulty: .easy,
-                    createdAt: Date()
-                ),
-                user: User(
-                    id: UUID(),
-                    username: "user_\(i)",
-                    displayName: ["田中太郎", "佐藤花子", "鈴木一郎", "高橋美咲", "伊藤健太"][i],
-                    avatarUrl: nil,
-                    bio: nil,
-                    level: 10 + i,
-                    totalScore: 5000 + i * 1000,
-                    streakDays: 5 + i,
-                    followerCount: 50 + i * 10,
-                    followingCount: 30 + i * 5,
-                    answerCount: 100 + i * 20,
-                    createdAt: Date()
-                ),
-                isLiked: i % 2 == 0
-            )
-        }
     }
 }

@@ -42,6 +42,20 @@ struct FeedView: View {
                     ProfileView(userId: userId)
                 }
             }
+            .alert("エラー", isPresented: .constant(viewModel.error != nil && !viewModel.isLoading)) {
+                Button("再試行") {
+                    Task {
+                        await viewModel.loadFeed()
+                    }
+                }
+                Button("閉じる", role: .cancel) {
+                    viewModel.error = nil
+                }
+            } message: {
+                if let error = viewModel.error {
+                    Text(error.localizedDescription)
+                }
+            }
         }
         .task {
             await viewModel.loadFeed()

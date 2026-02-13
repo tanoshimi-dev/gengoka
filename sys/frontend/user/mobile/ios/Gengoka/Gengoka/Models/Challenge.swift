@@ -43,6 +43,10 @@ struct Challenge: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
+        #if DEBUG
+        print("🔍 Decoding Challenge with available keys: \(container.allKeys)")
+        #endif
+        
         id = try container.decode(UUID.self, forKey: .id)
         categoryId = try container.decode(UUID.self, forKey: .categoryId)
         

@@ -23,6 +23,8 @@ struct ChallengeView: View {
                         inputSection(challenge)
                         optionsSection
                         submitSection
+                    } else if let error = viewModel.error {
+                        errorView(error)
                     }
                 }
                 .padding()
@@ -45,6 +47,20 @@ struct ChallengeView: View {
             }
             if viewModel.isSubmitting {
                 LoadingOverlay()
+            }
+        }
+        .alert("エラー", isPresented: .constant(viewModel.error != nil && viewModel.result == nil && !viewModel.isSubmitting)) {
+            Button("再試行") {
+                Task {
+                    await viewModel.loadChallenge(for: category)
+                }
+            }
+            Button("閉じる", role: .cancel) {
+                dismiss()
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.localizedDescription)
             }
         }
         .navigationDestination(isPresented: $showResult) {
@@ -205,6 +221,39 @@ struct ChallengeView: View {
             isEnabled: viewModel.canSubmit,
             isLoading: viewModel.isSubmitting
         )
+    }
+
+    private func errorView(_ error: Error) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 48))
+                .foregroundColor(AppColors.error)
+
+            Text("エラーが発生しました")
+                .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
+
+            Text(error.localizedDescription)
+                .font(.subheadline)
+                .foregroundColor(AppColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Button(action: {
+                Task {
+                    await viewModel.loadChallenge(for: category)
+                }
+            }) {
+                Text("再読み込み")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(AppColors.primaryGradient)
+                    .cornerRadius(12)
+            }
+        }
+        .padding()
     }
 }
 

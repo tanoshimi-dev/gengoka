@@ -69,6 +69,13 @@ struct ScoringDetails: Codable, Equatable {
     }
 }
 
+// UserSummary matches the backend's simplified user object in feed
+struct UserSummary: Codable {
+    let id: UUID
+    let name: String
+    let avatar: String?
+}
+
 struct FeedItem: Identifiable, Codable {
     let id: UUID
     let answer: Answer
@@ -77,11 +84,110 @@ struct FeedItem: Identifiable, Codable {
     let isLiked: Bool
 
     enum CodingKeys: String, CodingKey {
+        // Answer fields (flattened at top level)
         case id
-        case answer
+        case challengeId = "challenge_id"
+        case userId = "user_id"
+        case content
+        case score
+        case feedback = "ai_feedback"
+        case status
+        case likeCount = "like_count"
+        case commentCount = "comment_count"
+        case viewCount = "view_count"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        
+        // Nested objects
         case challenge
         case user
         case isLiked = "is_liked"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Decode flattened answer fields
+        let answerId = try container.decode(UUID.self, forKey: .id)
+        let challengeId = try container.decode(UUID.self, forKey: .challengeId)
+        let userId = try container.decode(UUID.self, forKey: .userId)
+        let content = try container.decode(String.self, forKey: .content)
+        let score = try container.decodeIfPresent(Int.self, forKey: .score)
+        let likeCount = try container.decodeIfPresent(Int.self, forKey: .likeCount) ?? 0
+        let commentCount = try container.decodeIfPresent(Int.self, forKey: .commentCount) ?? 0
+        let createdAt = try container.decode(Date.self, forKey: .createdAt)
+        
+        // Decode nested challenge and user
+        let challenge = try container.decode(Challenge.self, forKey: .challenge)
+        let userSummary = try container.decode(UserSummary.self, forKey: .user)
+        let isLiked = try container.decode(Bool.self, forKey: .isLiked)
+        
+        // Build Answer object from flattened fields
+        self.id = answerId
+        self.answer = Answer(
+            id: answerId,
+            challengeId: challengeId,
+            userId: userId,
+            content: content,
+            score: score,
+            feedback: nil, // ai_feedback is complex, ignore for now
+            isPublic: true, // Not provided in feed, default to true
+            likeCount: likeCount,
+            commentCount: commentCount,
+            createdAt: createdAt
+        )
+        
+        self.challenge = challenge
+        self.isLiked = isLiked
+        
+        // Convert UserSummary to full User object
+        self.user = User(
+            id: userSummary.id,
+            username: userSummary.name,
+            displayName: userSummary.name,
+            avatarUrl: userSummary.avatar,
+            bio: nil,
+            level: 1,
+            totalScore: 0,
+            streakDays: 0,
+            followerCount: 0,
+            followingCount: 0,
+            answerCount: 0,
+            createdAt: Date()
+        )
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        // Encode flattened answer fields
+        try container.encode(answer.id, forKey: .id)
+        try container.encode(answer.challengeId, forKey: .challengeId)
+        try container.encode(answer.userId, forKey: .userId)
+        try container.encode(answer.content, forKey: .content)
+        try container.encodeIfPresent(answer.score, forKey: .score)
+        try container.encode(answer.likeCount, forKey: .likeCount)
+        try container.encode(answer.commentCount, forKey: .commentCount)
+        try container.encode(answer.createdAt, forKey: .createdAt)
+        
+        // Encode nested objects
+        try container.encode(challenge, forKey: .challenge)
+        
+        let userSummary = UserSummary(
+            id: user.id,
+            name: user.displayName ?? user.username,
+            avatar: user.avatarUrl
+        )
+        try container.encode(userSummary, forKey: .user)
+        try container.encode(isLiked, forKey: .isLiked)
+    }
+    
+    init(id: UUID, answer: Answer, challenge: Challenge, user: User, isLiked: Bool) {
+        self.id = id
+        self.answer = answer
+        self.challenge = challenge
+        self.user = user
+        self.isLiked = isLiked
     }
 }
 

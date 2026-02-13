@@ -49,12 +49,35 @@ final class ChallengeViewModel {
         error = nil
 
         do {
-            let challenges: [Challenge] = try await apiClient.request(.dailyChallenges)
-            challenge = challenges.first { $0.categoryId == category.id } ?? challenges.first
+            // The backend returns an array of DailyChallenge objects
+            let dailyChallenges: [DailyChallenge] = try await apiClient.request(.dailyChallenges)
+            
+            #if DEBUG
+            print("✅ Successfully decoded \(dailyChallenges.count) daily challenges")
+            print("📋 Looking for category: \(category.id)")
+            for dc in dailyChallenges {
+                print("  - Challenge: \(dc.challenge.id), Category: \(dc.challenge.categoryId), Name: \(dc.categoryName)")
+            }
+            #endif
+            
+            // Try to find a challenge for the selected category
+            challenge = dailyChallenges.first { $0.challenge.categoryId == category.id }?.challenge 
+                ?? dailyChallenges.first?.challenge
+            
+            #if DEBUG
+            if let challenge = challenge {
+                print("✅ Selected challenge: \(challenge.prompt)")
+            } else {
+                print("⚠️ No challenge found")
+            }
+            #endif
         } catch {
+            #if DEBUG
+            print("❌ Failed to load challenge: \(error)")
+            print("❌ Error details: \(error.localizedDescription)")
+            #endif
             self.error = error
-            // Use mock for development
-            challenge = Challenge.mock
+            challenge = nil
         }
 
         isLoading = false
@@ -68,7 +91,7 @@ final class ChallengeViewModel {
             challenge = try await apiClient.request(.challenge(id: id))
         } catch {
             self.error = error
-            challenge = Challenge.mock
+            challenge = nil
         }
 
         isLoading = false
@@ -85,29 +108,7 @@ final class ChallengeViewModel {
             result = try await apiClient.request(.submitAnswer(challengeId: challenge.id), body: submission)
         } catch {
             self.error = error
-            // Mock result for development
-            result = AnswerResult(
-                answer: Answer(
-                    id: UUID(),
-                    challengeId: challenge.id,
-                    userId: AuthService.shared.userId,
-                    content: answerText,
-                    score: 85,
-                    feedback: "素晴らしい回答です！文法も正確で、表現も自然です。",
-                    isPublic: isPublic,
-                    likeCount: 0,
-                    commentCount: 0,
-                    createdAt: Date()
-                ),
-                scoringDetails: ScoringDetails(
-                    grammarScore: 90,
-                    creativityScore: 80,
-                    relevanceScore: 85,
-                    overallScore: 85,
-                    feedback: "素晴らしい回答です！文法も正確で、表現も自然です。",
-                    improvements: ["より具体的な描写を加えると、さらに良くなります。"]
-                )
-            )
+            result = nil
         }
 
         isSubmitting = false
