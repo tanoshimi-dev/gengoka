@@ -32,6 +32,13 @@ actor APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add JWT token if authenticated
+        if let token = AuthService.shared.authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Legacy User-ID header for backward compatibility
         request.setValue(AuthService.shared.userId.uuidString, forHTTPHeaderField: "User-ID")
 
         if let body = body {
@@ -49,6 +56,14 @@ actor APIClient {
             throw NetworkError.invalidResponse
         }
 
+        // Debug: Print raw response
+        #if DEBUG
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("📥 Response from \(endpoint.path):")
+            print(responseString)
+        }
+        #endif
+
         guard (200...299).contains(httpResponse.statusCode) else {
             if let apiError = try? decoder.decode(APIResponse<EmptyResponse>.self, from: data),
                let error = apiError.error {
@@ -69,10 +84,20 @@ actor APIClient {
         } catch let error as NetworkError {
             throw error
         } catch {
+            #if DEBUG
+            print("❌ Decoding error: \(error)")
+            if let decodingError = error as? DecodingError {
+                print("❌ Detailed error: \(decodingError)")
+            }
+            #endif
+            
             // Try direct decoding as fallback
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                #if DEBUG
+                print("❌ Direct decoding also failed: \(error)")
+                #endif
                 throw NetworkError.decodingError
             }
         }
@@ -80,12 +105,28 @@ actor APIClient {
 
     func request<T: Codable, B: Codable>(_ endpoint: APIEndpoint, body: B) async throws -> T {
         let bodyData = try encoder.encode(body)
+        
+        #if DEBUG
+        if let bodyString = String(data: bodyData, encoding: .utf8) {
+            print("📤 Request to \(endpoint.path):")
+            print(bodyString)
+        }
+        #endif
+        
         let request = buildRequest(for: endpoint, body: bodyData)
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.invalidResponse
         }
+
+        // Debug: Print raw response
+        #if DEBUG
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("📥 Response from \(endpoint.path):")
+            print(responseString)
+        }
+        #endif
 
         guard (200...299).contains(httpResponse.statusCode) else {
             if let apiError = try? decoder.decode(APIResponse<EmptyResponse>.self, from: data),
@@ -107,9 +148,19 @@ actor APIClient {
         } catch let error as NetworkError {
             throw error
         } catch {
+            #if DEBUG
+            print("❌ Decoding error: \(error)")
+            if let decodingError = error as? DecodingError {
+                print("❌ Detailed error: \(decodingError)")
+            }
+            #endif
+            
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                #if DEBUG
+                print("❌ Direct decoding also failed: \(error)")
+                #endif
                 throw NetworkError.decodingError
             }
         }

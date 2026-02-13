@@ -18,5 +18,12 @@ data class ChallengeWithCategory(
     val charLimit: Int,
     val releaseDate: String?,
     val answerCount: Int,
-    val category: Category?
+    val category: Category?,
+    val isCompleted: Boolean = false
+)
+
+data class DailyChallenge(
+    val challenge: Challenge,
+    val categoryName: String,
+    val isCompleted: Boolean
 )

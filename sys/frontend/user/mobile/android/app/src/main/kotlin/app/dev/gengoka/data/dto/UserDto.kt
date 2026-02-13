@@ -58,3 +58,17 @@ data class UpdateUserRequest(
     val avatar: String? = null,
     val bio: String? = null
 )
+
+@Serializable
+data class UserStatsDto(
+    @SerialName("total_challenges")
+    val totalChallenges: Int = 0,
+    @SerialName("completed_today")
+    val completedToday: Int = 0,
+    @SerialName("current_streak")
+    val currentStreak: Int = 0,
+    @SerialName("best_streak")
+    val bestStreak: Int = 0,
+    @SerialName("average_score")
+    val averageScore: Double = 0.0
+)

@@ -4,9 +4,11 @@ import app.dev.gengoka.core.util.Resource
 import app.dev.gengoka.domain.model.AnswerWithDetails
 import app.dev.gengoka.domain.model.User
 import app.dev.gengoka.domain.model.UserProfile
+import app.dev.gengoka.domain.model.UserStats
 import app.dev.gengoka.domain.model.UserSummary
 
 interface UserRepository {
+    suspend fun getUserStats(): Resource<UserStats>
     suspend fun getUser(id: String): Resource<UserProfile>
     suspend fun createUser(
         name: String,

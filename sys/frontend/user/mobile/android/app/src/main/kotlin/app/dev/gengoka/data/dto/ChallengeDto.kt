@@ -43,3 +43,12 @@ data class ChallengeWithCategoryDto(
     val updatedAt: String,
     val category: CategoryDto? = null
 )
+
+@Serializable
+data class DailyChallengeResponseDto(
+    val challenge: ChallengeDto,
+    @SerialName("category_name")
+    val categoryName: String,
+    @SerialName("is_completed")
+    val isCompleted: Boolean = false
+)

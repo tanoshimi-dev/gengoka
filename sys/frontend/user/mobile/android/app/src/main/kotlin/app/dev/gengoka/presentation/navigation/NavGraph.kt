@@ -1,18 +1,25 @@
 package app.dev.gengoka.presentation.navigation
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import app.dev.gengoka.presentation.screens.auth.AuthViewModel
+import app.dev.gengoka.presentation.screens.auth.LoginScreen
+import app.dev.gengoka.presentation.screens.auth.RegisterScreen
 import app.dev.gengoka.presentation.screens.challenge.ChallengeScreen
 import app.dev.gengoka.presentation.screens.feed.FeedScreen
 import app.dev.gengoka.presentation.screens.home.HomeScreen
 import app.dev.gengoka.presentation.screens.myprofile.MyProfileScreen
 import app.dev.gengoka.presentation.screens.profile.ProfileScreen
 import app.dev.gengoka.presentation.screens.result.ResultScreen
-import androidx.compose.ui.Modifier
 
 @Composable
 fun NavGraph(
@@ -24,10 +31,42 @@ fun NavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
+        // Auth Screen
+        composable(Screen.Auth.route) {
+            val viewModel: AuthViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsState()
+
+            AnimatedContent(
+                targetState = uiState.isLoginMode,
+                label = "auth_mode"
+            ) { isLogin ->
+                if (isLogin) {
+                    LoginScreen(
+                        isLoading = uiState.isLoading,
+                        error = uiState.error,
+                        onLogin = { email, password -> viewModel.login(email, password) },
+                        onSwitchToRegister = { viewModel.toggleMode() }
+                    )
+                } else {
+                    RegisterScreen(
+                        isLoading = uiState.isLoading,
+                        error = uiState.error,
+                        onRegister = { email, password, name ->
+                            viewModel.register(email, password, name)
+                        },
+                        onSwitchToLogin = { viewModel.toggleMode() }
+                    )
+                }
+            }
+        }
+
         // Home Screen
         composable(Screen.Home.route) {
             HomeScreen(
                 onCategoryClick = { categoryId, categoryName ->
+                    navController.navigate(Screen.Challenge.createRoute(categoryId, categoryName))
+                },
+                onDailyChallengeClick = { _, categoryId, categoryName ->
                     navController.navigate(Screen.Challenge.createRoute(categoryId, categoryName))
                 }
             )

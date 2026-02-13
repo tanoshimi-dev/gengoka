@@ -5,18 +5,25 @@ import okhttp3.Response
 import javax.inject.Inject
 
 class AuthInterceptor @Inject constructor(
+    private val tokenManager: TokenManager,
     private val userIdProvider: UserIdProvider
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
-        val userId = userIdProvider.getUserId()
-
-        val newRequest = originalRequest.newBuilder()
-            .header("X-User-ID", userId)
+        val requestBuilder = originalRequest.newBuilder()
             .header("Content-Type", "application/json")
-            .build()
 
-        return chain.proceed(newRequest)
+        val accessToken = tokenManager.getAccessToken()
+        if (accessToken != null) {
+            requestBuilder.header("Authorization", "Bearer $accessToken")
+            tokenManager.getUserId()?.let { userId ->
+                requestBuilder.header("X-User-ID", userId)
+            }
+        } else {
+            requestBuilder.header("X-User-ID", userIdProvider.getUserId())
+        }
+
+        return chain.proceed(requestBuilder.build())
     }
 }

@@ -3,11 +3,13 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::config::Config;
-use crate::models::{Category, Challenge, ChallengeWithCategory, CreateChallengeRequest, PaginationParams};
+use crate::models::{Category, Challenge, ChallengeWithCategory, CreateChallengeRequest, DailyChallengeResponse, PaginationParams};
 use crate::utils;
 
-pub async fn get_daily_challenges(pool: web::Data<PgPool>) -> HttpResponse {
-    let result = sqlx::query_as::<_, Challenge>(
+pub async fn get_daily_challenges(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
+    let user_id = utils::get_user_id(&req);
+
+    let challenges = sqlx::query_as::<_, Challenge>(
         r#"
         SELECT * FROM challenges
         WHERE status = 'active'
@@ -19,13 +21,47 @@ pub async fn get_daily_challenges(pool: web::Data<PgPool>) -> HttpResponse {
     .fetch_all(pool.get_ref())
     .await;
 
-    match result {
-        Ok(challenges) => utils::success(challenges),
+    let challenges = match challenges {
+        Ok(c) => c,
         Err(e) => {
             tracing::error!("Failed to fetch daily challenges: {}", e);
-            utils::internal_error("Failed to fetch daily challenges")
+            return utils::internal_error("Failed to fetch daily challenges");
         }
+    };
+
+    let mut results: Vec<DailyChallengeResponse> = Vec::new();
+    for challenge in challenges {
+        let category_name = sqlx::query_scalar::<_, String>(
+            r#"SELECT name FROM categories WHERE id = $1"#,
+        )
+        .bind(challenge.category_id)
+        .fetch_optional(pool.get_ref())
+        .await
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
+        let is_completed = if let Some(uid) = user_id {
+            sqlx::query_scalar::<_, bool>(
+                r#"SELECT EXISTS(SELECT 1 FROM answers WHERE challenge_id = $1 AND user_id = $2 AND status = 'active')"#,
+            )
+            .bind(challenge.id)
+            .bind(uid)
+            .fetch_one(pool.get_ref())
+            .await
+            .unwrap_or(false)
+        } else {
+            false
+        };
+
+        results.push(DailyChallengeResponse {
+            challenge,
+            category_name,
+            is_completed,
+        });
     }
+
+    utils::success(results)
 }
 
 pub async fn list_challenges(

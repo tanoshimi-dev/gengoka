@@ -5,6 +5,19 @@ import retrofit2.http.*
 
 interface GengokApi {
 
+    // Auth
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequestDto): ApiResponse<AuthTokensDto>
+
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequestDto): ApiResponse<AuthTokensDto>
+
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Body request: RefreshRequestDto): ApiResponse<AuthTokensDto>
+
+    @POST("auth/logout")
+    suspend fun logout(@Body request: LogoutRequestDto): ApiResponse<Unit?>
+
     // Categories
     @GET("categories")
     suspend fun getCategories(): ApiResponse<List<CategoryDto>>
@@ -27,7 +40,7 @@ interface GengokApi {
     ): ApiResponse<List<ChallengeDto>>
 
     @GET("challenges/daily")
-    suspend fun getDailyChallenges(): ApiResponse<List<ChallengeWithCategoryDto>>
+    suspend fun getDailyChallenges(): ApiResponse<List<DailyChallengeResponseDto>>
 
     @GET("challenges/{id}")
     suspend fun getChallenge(@Path("id") id: String): ApiResponse<ChallengeWithCategoryDto>
@@ -115,6 +128,9 @@ interface GengokApi {
         @Query("page") page: Int? = null,
         @Query("page_size") pageSize: Int? = null
     ): ApiResponse<List<UserSummaryDto>>
+
+    @GET("users/me/stats")
+    suspend fun getUserStats(): ApiResponse<UserStatsDto>
 
     // Feed & Rankings
     @GET("feed")

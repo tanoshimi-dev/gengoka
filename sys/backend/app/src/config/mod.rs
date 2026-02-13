@@ -8,6 +8,14 @@ pub struct Config {
     pub gemini: GeminiConfig,
     pub challenge_generation: ChallengeGenerationConfig,
     pub admin: AdminConfig,
+    pub auth: AuthConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct AuthConfig {
+    pub jwt_secret: String,
+    pub access_token_ttl_minutes: i64,
+    pub refresh_token_ttl_days: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -116,6 +124,18 @@ impl Config {
                     .unwrap_or(5),
                 cron_schedule: env::var("CHALLENGE_GENERATION_CRON")
                     .unwrap_or_else(|_| "0 0 9 * * *".to_string()),
+            },
+            auth: AuthConfig {
+                jwt_secret: env::var("JWT_SECRET")
+                    .unwrap_or_else(|_| "dev-jwt-secret-change-in-production".to_string()),
+                access_token_ttl_minutes: env::var("ACCESS_TOKEN_TTL_MINUTES")
+                    .unwrap_or_else(|_| "30".to_string())
+                    .parse()
+                    .unwrap_or(30),
+                refresh_token_ttl_days: env::var("REFRESH_TOKEN_TTL_DAYS")
+                    .unwrap_or_else(|_| "90".to_string())
+                    .parse()
+                    .unwrap_or(90),
             },
             admin: AdminConfig {
                 session_secret: env::var("ADMIN_SESSION_SECRET")

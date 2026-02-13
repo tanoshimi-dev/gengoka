@@ -186,6 +186,27 @@ struct MyProfileView: View {
             SettingsRow(icon: "questionmark.circle.fill", title: "ヘルプ", iconColor: AppColors.success)
             Divider().padding(.leading, 52)
             SettingsRow(icon: "info.circle.fill", title: "アプリについて", iconColor: AppColors.textSecondary)
+            Divider().padding(.leading, 52)
+            
+            // Logout button
+            Button {
+                AuthService.shared.logout()
+            } label: {
+                HStack(spacing: 16) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.title3)
+                        .foregroundColor(.red)
+                        .frame(width: 28)
+                    
+                    Text("ログアウト")
+                        .font(.body)
+                        .foregroundColor(.red)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
+            }
         }
         .background(Color.white)
         .cornerRadius(16)

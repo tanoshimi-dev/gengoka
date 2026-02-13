@@ -7,6 +7,11 @@ use crate::handlers;
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1")
+            // Auth
+            .route("/auth/register", web::post().to(handlers::register))
+            .route("/auth/login", web::post().to(handlers::login))
+            .route("/auth/refresh", web::post().to(handlers::refresh))
+            .route("/auth/logout", web::post().to(handlers::logout))
             // Categories
             .route("/categories", web::get().to(handlers::list_categories))
             .route("/categories/{id}", web::get().to(handlers::get_category))
@@ -45,6 +50,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .route("/comments/{id}", web::delete().to(handlers::delete_comment))
             // Users
             .route("/users", web::post().to(handlers::create_user))
+            .route("/users/me", web::get().to(handlers::get_me))
+            .route("/users/me/stats", web::get().to(handlers::get_user_stats))
             .route("/users/{id}", web::get().to(handlers::get_user))
             .route("/users/{id}", web::put().to(handlers::update_user))
             .route("/users/{id}/answers", web::get().to(handlers::get_user_answers))

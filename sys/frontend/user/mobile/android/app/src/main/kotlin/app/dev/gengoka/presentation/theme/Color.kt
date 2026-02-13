@@ -50,3 +50,26 @@ val SuccessGreen = Color(0xFF4CAF50)
 // Border colors
 val BorderLight = Color(0xFFE8E8E8)
 val BorderMedium = Color(0xFFF0F0F0)
+
+// Light background gradient
+val BackgroundLightGradientStart = Color(0xFFF8F9FF)
+val BackgroundLightGradientEnd = Color(0xFFF5F0FF)
+
+// Dark text for light backgrounds
+val TextDarkPrimary = Color(0xFF1A1A2E)
+
+// Stats icon colors
+val StatsOrange = Color(0xFFFF9500)
+val StatsGreen = Color(0xFF34C759)
+val StatsYellow = Color(0xFFFFCC00)
+val StatsBlue = Color(0xFF007AFF)
+
+// Warning
+val WarningYellow = Color(0xFFFFCC00)
+
+// Category accent colors (solid, for gradients)
+val CategorySituationAccent = Color(0xFFFF9500)
+val CategorySummaryAccent = Color(0xFF007AFF)
+val CategoryEmotionAccent = Color(0xFFFF2D55)
+val CategoryRephraseAccent = Color(0xFF34C759)
+val CategoryExplainAccent = Color(0xFFAF52DE)

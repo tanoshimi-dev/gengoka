@@ -1,6 +1,7 @@
 package app.dev.gengoka.presentation.navigation
 
 sealed class Screen(val route: String) {
+    data object Auth : Screen("auth")
     data object Home : Screen("home")
     data object Challenge : Screen("challenge/{categoryId}/{categoryName}") {
         fun createRoute(categoryId: String, categoryName: String) =

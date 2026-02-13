@@ -208,6 +208,101 @@ pub struct Follow {
     pub created_at: DateTime<Utc>,
 }
 
+// ============ iOS Response Types ============
+
+#[derive(Debug, Serialize)]
+pub struct CategoryResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub icon_name: Option<String>,
+    pub color_hex: Option<String>,
+    pub challenge_count: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DailyChallengeResponse {
+    pub challenge: Challenge,
+    pub category_name: String,
+    pub is_completed: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserStats {
+    pub total_challenges: i64,
+    pub completed_today: i64,
+    pub current_streak: i64,
+    pub best_streak: i64,
+    pub average_score: f64,
+}
+
+// ============ My Page ============
+
+#[derive(Debug, Serialize)]
+pub struct MyPageResponse {
+    pub id: Uuid,
+    pub email: Option<String>,
+    pub name: String,
+    pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub total_likes: i32,
+    // Social
+    pub answer_count: i64,
+    pub follower_count: i64,
+    pub following_count: i64,
+    // Learning stats
+    pub total_challenges: i64,
+    pub completed_today: i64,
+    pub current_streak: i64,
+    pub best_streak: i64,
+    pub average_score: f64,
+}
+
+// ============ Auth ============
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct SignupRequest {
+    #[validate(email)]
+    pub email: String,
+    #[validate(length(min = 8))]
+    pub password: String,
+    #[validate(length(min = 1, max = 100))]
+    pub name: String,
+    pub device_info: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
+    pub device_info: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RefreshRequest {
+    pub refresh_token: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LogoutRequest {
+    pub refresh_token: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AuthTokens {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub expires_in: i64,
+    pub user: UserSummary,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+    pub iat: usize,
+}
+
 // ============ Query Parameters ============
 
 #[derive(Debug, Deserialize)]

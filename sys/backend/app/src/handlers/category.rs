@@ -2,22 +2,39 @@ use actix_web::{web, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::Category;
+use crate::models::{Category, CategoryResponse};
 use crate::utils;
 
 pub async fn list_categories(pool: web::Data<PgPool>) -> HttpResponse {
-    let result = sqlx::query_as::<_, Category>(
+    let result = sqlx::query_as::<_, (Uuid, String, Option<String>, Option<String>, Option<String>, i64)>(
         r#"
-        SELECT * FROM categories
-        WHERE status = 'active'
-        ORDER BY sort_order ASC, name ASC
+        SELECT c.id, c.name, c.description, c.icon, c.color,
+               COUNT(ch.id) AS challenge_count
+        FROM categories c
+        LEFT JOIN challenges ch ON ch.category_id = c.id AND ch.status = 'active'
+        WHERE c.status = 'active'
+        GROUP BY c.id, c.name, c.description, c.icon, c.color, c.sort_order
+        ORDER BY c.sort_order ASC, c.name ASC
         "#,
     )
     .fetch_all(pool.get_ref())
     .await;
 
     match result {
-        Ok(categories) => utils::success(categories),
+        Ok(rows) => {
+            let categories: Vec<CategoryResponse> = rows
+                .into_iter()
+                .map(|(id, name, description, icon, color, challenge_count)| CategoryResponse {
+                    id,
+                    name,
+                    description,
+                    icon_name: icon,
+                    color_hex: color,
+                    challenge_count,
+                })
+                .collect();
+            utils::success(categories)
+        }
         Err(e) => {
             tracing::error!("Failed to fetch categories: {}", e);
             utils::internal_error("Failed to fetch categories")

@@ -6,8 +6,9 @@ data class Category(
     val description: String?,
     val icon: String?,
     val color: String?,
-    val charLimit: Int,
-    val sortOrder: Int
+    val challengeCount: Long = 0,
+    val charLimit: Int = 0,
+    val sortOrder: Int = 0
 ) {
     companion object {
         val defaultIcons = mapOf(

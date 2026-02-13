@@ -374,5 +374,47 @@ pub async fn run_migrations(pool: &DbPool) {
         .await
         .ok();
 
+    // Add password_hash column to users table for JWT auth
+    sqlx::query(
+        r#"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='password_hash') THEN
+                ALTER TABLE users ADD COLUMN password_hash VARCHAR(255);
+            END IF;
+        END $$;
+        "#,
+    )
+    .execute(pool)
+    .await
+    .ok();
+
+    // Refresh tokens table for JWT auth
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash VARCHAR(255) NOT NULL,
+            device_info VARCHAR(500),
+            expires_at TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create refresh_tokens table");
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash ON refresh_tokens(token_hash)")
+        .execute(pool)
+        .await
+        .ok();
+
     info!("Migrations completed successfully");
 }

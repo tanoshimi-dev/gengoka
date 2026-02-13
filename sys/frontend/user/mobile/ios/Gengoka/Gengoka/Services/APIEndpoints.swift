@@ -6,6 +6,12 @@
 import Foundation
 
 enum APIEndpoint {
+    // Auth endpoints
+    case login
+    case register
+    case refreshToken
+    
+    // App endpoints
     case categories
     case dailyChallenges
     case challenge(id: UUID)
@@ -23,6 +29,12 @@ enum APIEndpoint {
 
     var path: String {
         switch self {
+        case .login:
+            return "/auth/login"
+        case .register:
+            return "/auth/register"
+        case .refreshToken:
+            return "/auth/refresh"
         case .categories:
             return "/categories"
         case .dailyChallenges:
@@ -58,7 +70,7 @@ enum APIEndpoint {
         switch self {
         case .categories, .dailyChallenges, .challenge, .feed, .user, .currentUser, .userStats, .comments:
             return .get
-        case .submitAnswer, .followUser, .likeAnswer, .addComment:
+        case .login, .register, .refreshToken, .submitAnswer, .followUser, .likeAnswer, .addComment:
             return .post
         case .unfollowUser, .unlikeAnswer:
             return .delete

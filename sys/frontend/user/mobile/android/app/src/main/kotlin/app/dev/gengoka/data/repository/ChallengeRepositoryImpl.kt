@@ -3,6 +3,7 @@ package app.dev.gengoka.data.repository
 import app.dev.gengoka.core.util.Resource
 import app.dev.gengoka.core.util.safeApiCall
 import app.dev.gengoka.data.api.GengokApi
+import app.dev.gengoka.data.mapper.toChallengeWithCategory
 import app.dev.gengoka.data.mapper.toDomain
 import app.dev.gengoka.domain.model.ChallengeWithCategory
 import app.dev.gengoka.domain.repository.ChallengeRepository
@@ -13,7 +14,7 @@ class ChallengeRepositoryImpl @Inject constructor(
 ) : ChallengeRepository {
 
     override suspend fun getDailyChallenges(): Resource<List<ChallengeWithCategory>> = safeApiCall {
-        api.getDailyChallenges().data.map { it.toDomain() }
+        api.getDailyChallenges().data.map { it.toChallengeWithCategory() }
     }
 
     override suspend fun getChallenge(id: String): Resource<ChallengeWithCategory> = safeApiCall {

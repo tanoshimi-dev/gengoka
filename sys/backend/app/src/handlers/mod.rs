@@ -1,5 +1,6 @@
 pub mod admin;
 pub mod answer;
+pub mod auth;
 pub mod category;
 pub mod challenge;
 pub mod comment;
@@ -10,6 +11,7 @@ pub mod ranking;
 pub mod user;
 
 pub use answer::*;
+pub use auth::*;
 pub use category::*;
 pub use challenge::*;
 pub use comment::*;

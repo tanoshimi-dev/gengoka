@@ -28,3 +28,11 @@ data class UserSummary(
 ) {
     fun getInitial(): String = name.firstOrNull()?.toString() ?: "?"
 }
+
+data class UserStats(
+    val totalChallenges: Int,
+    val completedToday: Int,
+    val currentStreak: Int,
+    val bestStreak: Int,
+    val averageScore: Double
+)

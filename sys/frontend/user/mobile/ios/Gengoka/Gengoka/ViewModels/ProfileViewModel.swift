@@ -44,6 +44,42 @@ final class ProfileViewModel {
         isLoading = true
         error = nil
 
+        // First, check if we have authenticated user data
+        if let authUser = AuthService.shared.currentUser {
+            // Convert AuthUser to User for display
+            user = User(
+                id: authUser.id,
+                username: authUser.username ?? "user",
+                displayName: authUser.displayName ?? authUser.username ?? "User",
+                avatarUrl: authUser.avatarUrl,
+                bio: authUser.bio,
+                level: 1,  // Default values since auth doesn't have these
+                totalScore: 0,
+                streakDays: 0,
+                followerCount: 0,
+                followingCount: 0,
+                answerCount: 0,
+                createdAt: authUser.createdAt ?? Date()
+            )
+            
+            // Try to load stats separately
+            do {
+                stats = try await apiClient.request(.userStats)
+            } catch {
+                stats = UserStats(
+                    totalChallenges: 0,
+                    completedToday: 0,
+                    currentStreak: 0,
+                    bestStreak: 0,
+                    averageScore: 0
+                )
+            }
+            
+            isLoading = false
+            return
+        }
+
+        // Fallback: Try to load from API
         do {
             async let userTask: User = apiClient.request(.currentUser)
             async let statsTask: UserStats = apiClient.request(.userStats)
@@ -53,6 +89,7 @@ final class ProfileViewModel {
             stats = loadedStats
         } catch {
             self.error = error
+            // Last resort: use mock data
             user = User.mock
             stats = UserStats.mock
         }

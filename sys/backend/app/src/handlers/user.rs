@@ -4,8 +4,8 @@ use uuid::Uuid;
 
 use crate::config::Config;
 use crate::models::{
-    Answer, AnswerWithDetails, Challenge, CreateUserRequest, PaginationParams,
-    UpdateUserRequest, User, UserProfile, UserSummary,
+    Answer, AnswerWithDetails, Challenge, CreateUserRequest, MyPageResponse, PaginationParams,
+    UpdateUserRequest, User, UserProfile, UserStats, UserSummary,
 };
 use crate::utils;
 
@@ -275,4 +275,234 @@ pub async fn update_user(
             utils::internal_error("Failed to update user")
         }
     }
+}
+
+pub async fn get_me(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
+    let user_id = match utils::get_user_id(&req) {
+        Some(id) => id,
+        None => return utils::unauthorized("User ID required"),
+    };
+
+    // Fetch user
+    let user = sqlx::query_as::<_, User>(
+        r#"SELECT * FROM users WHERE id = $1 AND status = 'active'"#,
+    )
+    .bind(user_id)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    let user = match user {
+        Ok(Some(u)) => u,
+        Ok(None) => return utils::not_found("User not found"),
+        Err(e) => {
+            tracing::error!("Failed to fetch user: {}", e);
+            return utils::internal_error("Failed to fetch user");
+        }
+    };
+
+    // Social counts
+    let answer_count: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(*) FROM answers WHERE user_id = $1 AND status = 'active'"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    let follower_count: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(*) FROM follows WHERE following_id = $1"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    let following_count: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(*) FROM follows WHERE follower_id = $1"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    // Learning stats
+    let total_challenges: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(DISTINCT challenge_id) FROM answers WHERE user_id = $1 AND status = 'active'"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    let completed_today: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(DISTINCT challenge_id) FROM answers WHERE user_id = $1 AND status = 'active' AND created_at::date = CURRENT_DATE"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    let average_score: (Option<f64>,) = sqlx::query_as(
+        r#"SELECT AVG(score::float8) FROM answers WHERE user_id = $1 AND status = 'active' AND score IS NOT NULL"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((None,));
+
+    // Streak calculation
+    let dates: Vec<(chrono::NaiveDate,)> = sqlx::query_as(
+        r#"SELECT DISTINCT created_at::date AS d FROM answers WHERE user_id = $1 AND status = 'active' ORDER BY d DESC"#,
+    )
+    .bind(user_id)
+    .fetch_all(pool.get_ref())
+    .await
+    .unwrap_or_default();
+
+    let today = chrono::Utc::now().date_naive();
+    let mut current_streak: i64 = 0;
+    let mut best_streak: i64 = 0;
+    let mut streak: i64 = 0;
+    let mut expected = today;
+
+    for (i, (date,)) in dates.iter().enumerate() {
+        if i == 0 {
+            if *date == today || *date == today - chrono::Duration::days(1) {
+                streak = 1;
+                expected = *date - chrono::Duration::days(1);
+            } else {
+                streak = 1;
+                expected = *date - chrono::Duration::days(1);
+                current_streak = 0;
+            }
+        } else if *date == expected {
+            streak += 1;
+            expected = *date - chrono::Duration::days(1);
+        } else {
+            if i <= 1 || (dates[0].0 == today || dates[0].0 == today - chrono::Duration::days(1)) {
+                if current_streak == 0 {
+                    current_streak = streak;
+                }
+            }
+            best_streak = best_streak.max(streak);
+            streak = 1;
+            expected = *date - chrono::Duration::days(1);
+        }
+    }
+
+    if !dates.is_empty() {
+        best_streak = best_streak.max(streak);
+        if current_streak == 0 && (dates[0].0 == today || dates[0].0 == today - chrono::Duration::days(1)) {
+            current_streak = streak;
+        }
+    }
+
+    utils::success(MyPageResponse {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        bio: user.bio,
+        total_likes: user.total_likes,
+        answer_count: answer_count.0,
+        follower_count: follower_count.0,
+        following_count: following_count.0,
+        total_challenges: total_challenges.0,
+        completed_today: completed_today.0,
+        current_streak,
+        best_streak,
+        average_score: average_score.0.unwrap_or(0.0),
+    })
+}
+
+pub async fn get_user_stats(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
+    let user_id = match utils::get_user_id(&req) {
+        Some(id) => id,
+        None => return utils::unauthorized("User ID required"),
+    };
+
+    // total_challenges: distinct challenges the user has answered
+    let total_challenges: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(DISTINCT challenge_id) FROM answers WHERE user_id = $1 AND status = 'active'"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    // completed_today: distinct challenges answered today
+    let completed_today: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(DISTINCT challenge_id) FROM answers WHERE user_id = $1 AND status = 'active' AND created_at::date = CURRENT_DATE"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((0,));
+
+    // average_score
+    let average_score: (Option<f64>,) = sqlx::query_as(
+        r#"SELECT AVG(score::float8) FROM answers WHERE user_id = $1 AND status = 'active' AND score IS NOT NULL"#,
+    )
+    .bind(user_id)
+    .fetch_one(pool.get_ref())
+    .await
+    .unwrap_or((None,));
+
+    // Streak calculation: get distinct dates with answers, ordered descending
+    let dates: Vec<(chrono::NaiveDate,)> = sqlx::query_as(
+        r#"SELECT DISTINCT created_at::date AS d FROM answers WHERE user_id = $1 AND status = 'active' ORDER BY d DESC"#,
+    )
+    .bind(user_id)
+    .fetch_all(pool.get_ref())
+    .await
+    .unwrap_or_default();
+
+    let today = chrono::Utc::now().date_naive();
+    let mut current_streak: i64 = 0;
+    let mut best_streak: i64 = 0;
+    let mut streak: i64 = 0;
+    let mut expected = today;
+
+    for (i, (date,)) in dates.iter().enumerate() {
+        if i == 0 {
+            // Allow today or yesterday as the start
+            if *date == today || *date == today - chrono::Duration::days(1) {
+                streak = 1;
+                expected = *date - chrono::Duration::days(1);
+            } else {
+                // No current streak, but still calculate best
+                streak = 1;
+                expected = *date - chrono::Duration::days(1);
+                current_streak = 0;
+            }
+        } else if *date == expected {
+            streak += 1;
+            expected = *date - chrono::Duration::days(1);
+        } else {
+            if i <= 1 || (dates[0].0 == today || dates[0].0 == today - chrono::Duration::days(1)) {
+                if current_streak == 0 {
+                    current_streak = streak;
+                }
+            }
+            best_streak = best_streak.max(streak);
+            streak = 1;
+            expected = *date - chrono::Duration::days(1);
+        }
+    }
+
+    // Finalize streaks
+    if !dates.is_empty() {
+        best_streak = best_streak.max(streak);
+        if current_streak == 0 && (dates[0].0 == today || dates[0].0 == today - chrono::Duration::days(1)) {
+            current_streak = streak;
+        }
+    }
+
+    utils::success(UserStats {
+        total_challenges: total_challenges.0,
+        completed_today: completed_today.0,
+        current_streak,
+        best_streak,
+        average_score: average_score.0.unwrap_or(0.0),
+    })
 }

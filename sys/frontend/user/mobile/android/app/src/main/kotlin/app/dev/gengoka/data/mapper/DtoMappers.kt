@@ -7,10 +7,9 @@ fun CategoryDto.toDomain() = Category(
     id = id,
     name = name,
     description = description,
-    icon = icon,
-    color = color,
-    charLimit = charLimit,
-    sortOrder = sortOrder
+    icon = iconName,
+    color = colorHex,
+    challengeCount = challengeCount
 )
 
 fun ChallengeDto.toDomain() = Challenge(
@@ -21,6 +20,30 @@ fun ChallengeDto.toDomain() = Challenge(
     charLimit = charLimit,
     releaseDate = releaseDate,
     answerCount = answerCount
+)
+
+fun DailyChallengeResponseDto.toDomain() = DailyChallenge(
+    challenge = challenge.toDomain(),
+    categoryName = categoryName,
+    isCompleted = isCompleted
+)
+
+fun DailyChallengeResponseDto.toChallengeWithCategory() = ChallengeWithCategory(
+    id = challenge.id,
+    categoryId = challenge.categoryId,
+    title = challenge.title,
+    description = challenge.description,
+    charLimit = challenge.charLimit,
+    releaseDate = challenge.releaseDate,
+    answerCount = challenge.answerCount,
+    category = Category(
+        id = challenge.categoryId,
+        name = categoryName,
+        description = null,
+        icon = null,
+        color = null
+    ),
+    isCompleted = isCompleted
 )
 
 fun ChallengeWithCategoryDto.toDomain() = ChallengeWithCategory(
@@ -97,6 +120,14 @@ fun AnswerWithDetailsDto.toDomain() = AnswerWithDetails(
     user = user.toDomain(),
     challenge = challenge.toDomain(),
     isLiked = isLiked
+)
+
+fun UserStatsDto.toDomain() = UserStats(
+    totalChallenges = totalChallenges,
+    completedToday = completedToday,
+    currentStreak = currentStreak,
+    bestStreak = bestStreak,
+    averageScore = averageScore
 )
 
 fun CommentWithUserDto.toDomain() = CommentWithUser(

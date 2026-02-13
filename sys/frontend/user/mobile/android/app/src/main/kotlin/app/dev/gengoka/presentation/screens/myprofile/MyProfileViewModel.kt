@@ -2,10 +2,11 @@ package app.dev.gengoka.presentation.screens.myprofile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.dev.gengoka.core.network.UserIdProvider
+import app.dev.gengoka.core.network.TokenManager
 import app.dev.gengoka.core.util.Resource
-import app.dev.gengoka.domain.model.AnswerWithDetails
 import app.dev.gengoka.domain.model.UserProfile
+import app.dev.gengoka.domain.model.UserStats
+import app.dev.gengoka.domain.repository.AuthRepository
 import app.dev.gengoka.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,17 +18,16 @@ import javax.inject.Inject
 
 data class MyProfileUiState(
     val profile: UserProfile? = null,
-    val answers: List<AnswerWithDetails> = emptyList(),
+    val stats: UserStats? = null,
     val isLoading: Boolean = false,
-    val isLoadingAnswers: Boolean = false,
-    val error: String? = null,
-    val selectedTab: Int = 0
+    val error: String? = null
 )
 
 @HiltViewModel
 class MyProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val userIdProvider: UserIdProvider
+    private val authRepository: AuthRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MyProfileUiState())
@@ -41,22 +41,24 @@ class MyProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            val userId = userIdProvider.getUserIdAsync()
+            val userId = tokenManager.getUserId()
+            if (userId == null) {
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
 
             when (val result = userRepository.getUser(userId)) {
                 is Resource.Success -> {
                     _uiState.update { it.copy(profile = result.data, isLoading = false) }
-                    loadAnswers(userId)
                 }
                 is Resource.Error -> {
-                    // User might not exist yet, create default profile
                     _uiState.update {
                         it.copy(
                             profile = UserProfile(
                                 id = userId,
-                                name = "あなた",
+                                name = tokenManager.getUserName() ?: "あなた",
                                 avatar = null,
-                                bio = "プロフィールを編集して自己紹介を追加しましょう",
+                                bio = null,
                                 totalLikes = 0,
                                 answerCount = 0,
                                 followerCount = 0,
@@ -69,27 +71,26 @@ class MyProfileViewModel @Inject constructor(
                 }
                 is Resource.Loading -> {}
             }
-        }
-    }
 
-    private fun loadAnswers(userId: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingAnswers = true) }
-
-            when (val result = userRepository.getUserAnswers(userId)) {
+            // Load stats in parallel
+            when (val statsResult = userRepository.getUserStats()) {
                 is Resource.Success -> {
-                    _uiState.update { it.copy(answers = result.data, isLoadingAnswers = false) }
+                    _uiState.update { it.copy(stats = statsResult.data) }
                 }
                 is Resource.Error -> {
-                    _uiState.update { it.copy(isLoadingAnswers = false) }
+                    _uiState.update {
+                        it.copy(stats = UserStats(0, 0, 0, 0, 0.0))
+                    }
                 }
                 is Resource.Loading -> {}
             }
         }
     }
 
-    fun selectTab(index: Int) {
-        _uiState.update { it.copy(selectedTab = index) }
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+        }
     }
 
     fun clearError() {

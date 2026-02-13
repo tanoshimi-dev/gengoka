@@ -9,6 +9,7 @@ import app.dev.gengoka.data.mapper.toDomain
 import app.dev.gengoka.domain.model.AnswerWithDetails
 import app.dev.gengoka.domain.model.User
 import app.dev.gengoka.domain.model.UserProfile
+import app.dev.gengoka.domain.model.UserStats
 import app.dev.gengoka.domain.model.UserSummary
 import app.dev.gengoka.domain.repository.UserRepository
 import javax.inject.Inject
@@ -16,6 +17,10 @@ import javax.inject.Inject
 class UserRepositoryImpl @Inject constructor(
     private val api: GengokApi
 ) : UserRepository {
+
+    override suspend fun getUserStats(): Resource<UserStats> = safeApiCall {
+        api.getUserStats().data.toDomain()
+    }
 
     override suspend fun getUser(id: String): Resource<UserProfile> = safeApiCall {
         api.getUser(id).data.toDomain()
