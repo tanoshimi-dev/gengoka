@@ -50,7 +50,13 @@ class ChallengeViewModel @Inject constructor(
                 is Resource.Success -> {
                     val challenge = result.data.firstOrNull { it.categoryId == categoryId }
                         ?: result.data.firstOrNull()
-                    _uiState.update { it.copy(challenge = challenge, isLoading = false) }
+                    _uiState.update {
+                        it.copy(
+                            challenge = challenge,
+                            answerText = challenge?.userAnswer?.content ?: "",
+                            isLoading = false
+                        )
+                    }
                 }
                 is Resource.Error -> {
                     _uiState.update { it.copy(error = result.message, isLoading = false) }

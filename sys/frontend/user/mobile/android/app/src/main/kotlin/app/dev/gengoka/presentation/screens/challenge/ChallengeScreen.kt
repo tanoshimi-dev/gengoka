@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.dev.gengoka.presentation.components.*
@@ -101,51 +103,152 @@ fun ChallengeScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Character limit info
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(SurfaceGray)
-                                    .padding(12.dp, 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = null,
-                                    tint = TextSecondary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
+                            val isAlreadyAnswered = challenge.isCompleted
+
+                            if (isAlreadyAnswered) {
+                                // Answered badge
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(SuccessGreen.copy(alpha = 0.1f))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = SuccessGreen,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "回答済み",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = SuccessGreen
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Read-only answer display
                                 Text(
-                                    text = "${challenge.charLimit}文字以内で回答",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary
+                                    text = uiState.answerText,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = TextPrimary,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 120.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(SurfaceGray)
+                                        .padding(16.dp)
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Character count
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row {
+                                        Text(
+                                            text = "${uiState.answerText.length}",
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = SuccessGreen
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = "文字",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = SuccessGreen
+                                        )
+                                    }
+                                    Text(
+                                        text = "0〜${challenge.charLimit}文字",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextSecondary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                // Answered button (disabled)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(SuccessGreen)
+                                        .padding(vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = SurfaceWhite,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "回答済み",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = SurfaceWhite
+                                        )
+                                    }
+                                }
+                            } else {
+                                // Character limit info
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(SurfaceGray)
+                                        .padding(12.dp, 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = null,
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "${challenge.charLimit}文字以内で回答",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = TextSecondary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(20.dp))
+
+                                // Answer input
+                                CharacterCounterTextField(
+                                    value = uiState.answerText,
+                                    onValueChange = viewModel::updateAnswerText,
+                                    charLimit = challenge.charLimit,
+                                    placeholder = "ここに回答を入力..."
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                // Submit button
+                                val isValid = uiState.answerText.isNotEmpty() &&
+                                    uiState.answerText.length <= challenge.charLimit
+
+                                GradientButton(
+                                    text = "回答を送信",
+                                    onClick = viewModel::submitAnswer,
+                                    enabled = isValid,
+                                    isLoading = uiState.isSubmitting
                                 )
                             }
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            // Answer input
-                            CharacterCounterTextField(
-                                value = uiState.answerText,
-                                onValueChange = viewModel::updateAnswerText,
-                                charLimit = challenge.charLimit,
-                                placeholder = "ここに回答を入力..."
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Submit button
-                            val isValid = uiState.answerText.isNotEmpty() &&
-                                uiState.answerText.length <= challenge.charLimit
-
-                            GradientButton(
-                                text = "回答を送信",
-                                onClick = viewModel::submitAnswer,
-                                enabled = isValid,
-                                isLoading = uiState.isSubmitting
-                            )
                         }
                     }
                 }
