@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var selectedCategory: Category?
     @State private var showChallenge = false
     @State private var showErrorAlert = false
+    @State private var loadTrigger = UUID() // Used to control when to reload
 
     var body: some View {
         NavigationStack {
@@ -39,7 +40,7 @@ struct HomeView: View {
             }
             .background(AppColors.backgroundGradient.ignoresSafeArea())
             .refreshable {
-                await viewModel.refresh()
+                loadTrigger = UUID() // Trigger a fresh load
             }
             .navigationDestination(isPresented: $showChallenge) {
                 if let category = selectedCategory {
@@ -80,7 +81,7 @@ struct HomeView: View {
                 }
             }
         }
-        .task {
+        .task(id: loadTrigger) {
             await viewModel.loadData()
         }
         .onChange(of: viewModel.error != nil) { oldValue, newValue in

@@ -15,14 +15,27 @@ final class HomeViewModel {
 
     private let apiClient = APIClient.shared
     private var isInitialLoadComplete = false
+    private var currentLoadTask: Task<Void, Never>? // Track the current load task
     
     func loadData() async {
+        // Cancel any existing load task
+        currentLoadTask?.cancel()
+        
         // Prevent duplicate initial loads
         guard !isLoading else {
             print("⚠️ Already loading, skipping duplicate loadData() call")
             return
         }
         
+        // Create new task and store reference
+        currentLoadTask = Task {
+            await performLoad()
+        }
+        
+        await currentLoadTask?.value
+    }
+    
+    private func performLoad() async {
         isLoading = true
         error = nil
 
@@ -31,6 +44,14 @@ final class HomeViewModel {
         do {
             print("📡 Loading categories...")
             loadedCategories = try await apiClient.request(.categories)
+            
+            // Check if cancelled
+            guard !Task.isCancelled else {
+                print("⚠️ Load cancelled during categories")
+                isLoading = false
+                return
+            }
+            
             categories = loadedCategories
             print("✅ Categories loaded: \(loadedCategories.count) items")
         } catch {
@@ -49,6 +70,13 @@ final class HomeViewModel {
         do {
             print("📡 Loading user stats...")
             let loadedStats: UserStats = try await apiClient.request(.userStats)
+            
+            guard !Task.isCancelled else {
+                print("⚠️ Load cancelled during user stats")
+                isLoading = false
+                return
+            }
+            
             userStats = loadedStats
             print("✅ User stats loaded")
         } catch {
@@ -64,6 +92,13 @@ final class HomeViewModel {
         do {
             print("📡 Loading daily challenges...")
             let loadedDaily: [DailyChallenge] = try await apiClient.request(.dailyChallenges)
+            
+            guard !Task.isCancelled else {
+                print("⚠️ Load cancelled during daily challenges")
+                isLoading = false
+                return
+            }
+            
             dailyChallenges = loadedDaily
             print("✅ Daily challenges loaded: \(loadedDaily.count) items")
         } catch {
@@ -89,8 +124,7 @@ final class HomeViewModel {
     }
 
     func refresh() async {
-        // Allow refresh even if already loaded
-        isInitialLoadComplete = false
+        // Simply reload data - the task cancellation will be handled automatically
         await loadData()
     }
 }
