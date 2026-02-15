@@ -76,6 +76,24 @@ struct FeedItemView: View {
                 .font(.caption)
                 .foregroundColor(AppColors.textSecondary)
                 .lineLimit(1)
+            
+            Spacer()
+            
+            // Show badge if current user has also answered this challenge
+            if item.hasUserAnswered {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption2)
+                    Text("回答済み")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(AppColors.success)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(AppColors.success.opacity(0.1))
+                .cornerRadius(6)
+            }
         }
         .padding(10)
         .background(Color(.systemGray6))

@@ -120,36 +120,29 @@ struct DailyChallenge: Codable {
     let challenge: Challenge
     let categoryName: String
     let isCompleted: Bool
+    let userAnswer: Answer?  // ← User's existing answer if already completed
 
     enum CodingKeys: String, CodingKey {
         case challenge
         case categoryName = "category_name"
         case isCompleted = "is_completed"
+        case userAnswer = "user_answer"
     }
     
     // Initialize from a Challenge directly (for backend compatibility)
-    init(challenge: Challenge, categoryName: String = "", isCompleted: Bool = false) {
+    init(challenge: Challenge, categoryName: String = "", isCompleted: Bool = false, userAnswer: Answer? = nil) {
         self.challenge = challenge
         self.categoryName = categoryName
         self.isCompleted = isCompleted
+        self.userAnswer = userAnswer
     }
     
-    // Standard Codable initializer
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        // Try to decode the nested structure first
-        if let challenge = try? container.decode(Challenge.self, forKey: .challenge) {
-            self.challenge = challenge
-            self.categoryName = try container.decode(String.self, forKey: .categoryName)
-            self.isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
-        } else {
-            // If that fails, the backend might be returning Challenge directly
-            // In this case, decode the entire object as a Challenge
-            self.challenge = try Challenge(from: decoder)
-            self.categoryName = "" // Will need to be looked up
-            self.isCompleted = false
-        }
+        self.challenge = try container.decode(Challenge.self, forKey: .challenge)
+        self.categoryName = try container.decode(String.self, forKey: .categoryName)
+        self.isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
+        self.userAnswer = try container.decodeIfPresent(Answer.self, forKey: .userAnswer)
     }
 }
 

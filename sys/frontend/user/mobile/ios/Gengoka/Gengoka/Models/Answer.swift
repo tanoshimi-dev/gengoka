@@ -11,11 +11,14 @@ struct Answer: Identifiable, Codable, Equatable {
     let userId: UUID
     let content: String
     let score: Int?
-    let feedback: String?
+    let aiFeedback: String?  // Backend uses "ai_feedback"
     let isPublic: Bool
     let likeCount: Int
     let commentCount: Int
+    let viewCount: Int  // Added from backend
+    let status: String  // Added from backend
     let createdAt: Date
+    let updatedAt: Date  // Added from backend
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -23,11 +26,73 @@ struct Answer: Identifiable, Codable, Equatable {
         case userId = "user_id"
         case content
         case score
-        case feedback
+        case aiFeedback = "ai_feedback"  // Changed from "feedback"
         case isPublic = "is_public"
         case likeCount = "like_count"
         case commentCount = "comment_count"
+        case viewCount = "view_count"  // Added
+        case status  // Added
         case createdAt = "created_at"
+        case updatedAt = "updated_at"  // Added
+    }
+    
+    // Custom initializer for manual creation
+    init(
+        id: UUID,
+        challengeId: UUID,
+        userId: UUID,
+        content: String,
+        score: Int? = nil,
+        feedback: String? = nil,  // Keep for backward compatibility
+        aiFeedback: String? = nil,  // New parameter
+        isPublic: Bool = true,
+        likeCount: Int = 0,
+        commentCount: Int = 0,
+        viewCount: Int = 0,
+        status: String = "active",
+        createdAt: Date,
+        updatedAt: Date? = nil
+    ) {
+        self.id = id
+        self.challengeId = challengeId
+        self.userId = userId
+        self.content = content
+        self.score = score
+        // Prefer aiFeedback if provided, otherwise use feedback
+        self.aiFeedback = aiFeedback ?? feedback
+        self.isPublic = isPublic
+        self.likeCount = likeCount
+        self.commentCount = commentCount
+        self.viewCount = viewCount
+        self.status = status
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt ?? createdAt
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        challengeId = try container.decode(UUID.self, forKey: .challengeId)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        content = try container.decode(String.self, forKey: .content)
+        score = try container.decodeIfPresent(Int.self, forKey: .score)
+        aiFeedback = try container.decodeIfPresent(String.self, forKey: .aiFeedback)
+        
+        // isPublic might be missing, default to true
+        isPublic = try container.decodeIfPresent(Bool.self, forKey: .isPublic) ?? true
+        
+        likeCount = try container.decodeIfPresent(Int.self, forKey: .likeCount) ?? 0
+        commentCount = try container.decodeIfPresent(Int.self, forKey: .commentCount) ?? 0
+        viewCount = try container.decodeIfPresent(Int.self, forKey: .viewCount) ?? 0
+        status = try container.decodeIfPresent(String.self, forKey: .status) ?? "active"
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt
+    }
+    
+    // Convenience computed property for backward compatibility
+    var feedback: String? {
+        aiFeedback
     }
 }
 
@@ -48,6 +113,36 @@ struct AnswerResult: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case answer
         case scoringDetails = "scoring_details"
+    }
+    
+    init(answer: Answer, scoringDetails: ScoringDetails? = nil) {
+        self.answer = answer
+        self.scoringDetails = scoringDetails
+    }
+    
+    init(from decoder: Decoder) throws {
+        // Try to decode as a full AnswerResult first
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let answer = try? container.decode(Answer.self, forKey: .answer) {
+            self.answer = answer
+            self.scoringDetails = try? container.decodeIfPresent(ScoringDetails.self, forKey: .scoringDetails)
+            
+            #if DEBUG
+            print("✅ Decoded AnswerResult with nested structure")
+            #endif
+        } else {
+            // If that fails, the backend might return Answer directly
+            #if DEBUG
+            print("⚠️ Trying to decode Answer directly (no nesting)")
+            #endif
+            
+            self.answer = try Answer(from: decoder)
+            self.scoringDetails = nil
+            
+            #if DEBUG
+            print("✅ Decoded Answer directly as AnswerResult")
+            #endif
+        }
     }
 }
 
@@ -82,9 +177,17 @@ struct FeedItem: Identifiable, Codable {
     let challenge: Challenge
     let user: User
     let isLiked: Bool
+    let hasUserAnswered: Bool  // ← NEW: Has current user answered this challenge?
 
     enum CodingKeys: String, CodingKey {
-        // Answer fields (flattened at top level)
+        // Nested format keys
+        case answer
+        case challenge
+        case user
+        case isLiked = "is_liked"
+        case hasUserAnswered = "has_user_answered"
+        
+        // Flattened format keys (for backward compatibility)
         case id
         case challengeId = "challenge_id"
         case userId = "user_id"
@@ -97,64 +200,112 @@ struct FeedItem: Identifiable, Codable {
         case viewCount = "view_count"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
-        
-        // Nested objects
-        case challenge
-        case user
-        case isLiked = "is_liked"
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        // Decode flattened answer fields
-        let answerId = try container.decode(UUID.self, forKey: .id)
-        let challengeId = try container.decode(UUID.self, forKey: .challengeId)
-        let userId = try container.decode(UUID.self, forKey: .userId)
-        let content = try container.decode(String.self, forKey: .content)
-        let score = try container.decodeIfPresent(Int.self, forKey: .score)
-        let likeCount = try container.decodeIfPresent(Int.self, forKey: .likeCount) ?? 0
-        let commentCount = try container.decodeIfPresent(Int.self, forKey: .commentCount) ?? 0
-        let createdAt = try container.decode(Date.self, forKey: .createdAt)
+        #if DEBUG
+        // Debug: Print all available keys
+        print("🔍 FeedItem decoding - Available keys: \(container.allKeys.map { $0.stringValue })")
+        #endif
         
-        // Decode nested challenge and user
-        let challenge = try container.decode(Challenge.self, forKey: .challenge)
-        let userSummary = try container.decode(UserSummary.self, forKey: .user)
-        let isLiked = try container.decode(Bool.self, forKey: .isLiked)
-        
-        // Build Answer object from flattened fields
-        self.id = answerId
-        self.answer = Answer(
-            id: answerId,
-            challengeId: challengeId,
-            userId: userId,
-            content: content,
-            score: score,
-            feedback: nil, // ai_feedback is complex, ignore for now
-            isPublic: true, // Not provided in feed, default to true
-            likeCount: likeCount,
-            commentCount: commentCount,
-            createdAt: createdAt
-        )
-        
-        self.challenge = challenge
-        self.isLiked = isLiked
-        
-        // Convert UserSummary to full User object
-        self.user = User(
-            id: userSummary.id,
-            username: userSummary.name,
-            displayName: userSummary.name,
-            avatarUrl: userSummary.avatar,
-            bio: nil,
-            level: 1,
-            totalScore: 0,
-            streakDays: 0,
-            followerCount: 0,
-            followingCount: 0,
-            answerCount: 0,
-            createdAt: Date()
-        )
+        // Try to decode nested format first (new backend format)
+        if let nestedAnswer = try? container.decode(Answer.self, forKey: .answer) {
+            #if DEBUG
+            print("✅ Found nested 'answer' object")
+            #endif
+            
+            // New format: answer, challenge, user are all nested objects
+            self.id = nestedAnswer.id
+            self.answer = nestedAnswer
+            self.challenge = try container.decode(Challenge.self, forKey: .challenge)
+            
+            // Decode user (might be UserSummary or full User)
+            if let userSummary = try? container.decode(UserSummary.self, forKey: .user) {
+                self.user = User(
+                    id: userSummary.id,
+                    username: userSummary.name,
+                    displayName: userSummary.name,
+                    avatarUrl: userSummary.avatar,
+                    bio: nil,
+                    level: 1,
+                    totalScore: 0,
+                    streakDays: 0,
+                    followerCount: 0,
+                    followingCount: 0,
+                    answerCount: 0,
+                    createdAt: Date()
+                )
+            } else {
+                self.user = try container.decode(User.self, forKey: .user)
+            }
+            
+            self.isLiked = try container.decode(Bool.self, forKey: .isLiked)
+            self.hasUserAnswered = try container.decodeIfPresent(Bool.self, forKey: .hasUserAnswered) ?? false
+            
+            #if DEBUG
+            print("✅ Decoded FeedItem using nested format")
+            #endif
+        } else {
+            #if DEBUG
+            print("⚠️ No nested 'answer' key found, trying flattened format")
+            #endif
+            
+            // Old format: answer fields are flattened at top level
+            let answerId = try container.decode(UUID.self, forKey: .id)
+            let challengeId = try container.decode(UUID.self, forKey: .challengeId)
+            let userId = try container.decode(UUID.self, forKey: .userId)
+            let content = try container.decode(String.self, forKey: .content)
+            let score = try container.decodeIfPresent(Int.self, forKey: .score)
+            let likeCount = try container.decodeIfPresent(Int.self, forKey: .likeCount) ?? 0
+            let commentCount = try container.decodeIfPresent(Int.self, forKey: .commentCount) ?? 0
+            let createdAt = try container.decode(Date.self, forKey: .createdAt)
+            
+            // Decode nested challenge and user
+            let challenge = try container.decode(Challenge.self, forKey: .challenge)
+            let userSummary = try container.decode(UserSummary.self, forKey: .user)
+            let isLiked = try container.decode(Bool.self, forKey: .isLiked)
+            
+            // Build Answer object from flattened fields
+            self.id = answerId
+            self.answer = Answer(
+                id: answerId,
+                challengeId: challengeId,
+                userId: userId,
+                content: content,
+                score: score,
+                feedback: nil, // ai_feedback is complex, ignore for now
+                isPublic: true, // Not provided in feed, default to true
+                likeCount: likeCount,
+                commentCount: commentCount,
+                createdAt: createdAt
+            )
+            
+            self.challenge = challenge
+            self.isLiked = isLiked
+            self.hasUserAnswered = try container.decodeIfPresent(Bool.self, forKey: .hasUserAnswered) ?? false
+            
+            // Convert UserSummary to full User object
+            self.user = User(
+                id: userSummary.id,
+                username: userSummary.name,
+                displayName: userSummary.name,
+                avatarUrl: userSummary.avatar,
+                bio: nil,
+                level: 1,
+                totalScore: 0,
+                streakDays: 0,
+                followerCount: 0,
+                followingCount: 0,
+                answerCount: 0,
+                createdAt: Date()
+            )
+            
+            #if DEBUG
+            print("✅ Decoded FeedItem using flattened format")
+            #endif
+        }
     }
     
     func encode(to encoder: Encoder) throws {
@@ -180,14 +331,16 @@ struct FeedItem: Identifiable, Codable {
         )
         try container.encode(userSummary, forKey: .user)
         try container.encode(isLiked, forKey: .isLiked)
+        try container.encode(hasUserAnswered, forKey: .hasUserAnswered)
     }
     
-    init(id: UUID, answer: Answer, challenge: Challenge, user: User, isLiked: Bool) {
+    init(id: UUID, answer: Answer, challenge: Challenge, user: User, isLiked: Bool, hasUserAnswered: Bool = false) {
         self.id = id
         self.answer = answer
         self.challenge = challenge
         self.user = user
         self.isLiked = isLiked
+        self.hasUserAnswered = hasUserAnswered
     }
 }
 

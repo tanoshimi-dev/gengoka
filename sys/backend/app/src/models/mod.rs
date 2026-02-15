@@ -225,6 +225,7 @@ pub struct DailyChallengeResponse {
     pub challenge: Challenge,
     pub category_name: String,
     pub is_completed: bool,
+    pub user_answer: Option<Answer>,
 }
 
 #[derive(Debug, Serialize)]

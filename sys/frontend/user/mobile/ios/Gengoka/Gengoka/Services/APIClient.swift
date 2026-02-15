@@ -61,6 +61,16 @@ actor APIClient {
         if let responseString = String(data: data, encoding: .utf8) {
             print("📥 Response from \(endpoint.path):")
             print(responseString)
+            
+            // For feed endpoint, also try to pretty print the JSON
+            if endpoint.path.contains("/feed") {
+                if let jsonObject = try? JSONSerialization.jsonObject(with: data),
+                   let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted),
+                   let prettyString = String(data: prettyData, encoding: .utf8) {
+                    print("📄 Pretty JSON:")
+                    print(prettyString)
+                }
+            }
         }
         #endif
 
@@ -213,11 +223,49 @@ enum NetworkError: LocalizedError {
         case .invalidResponse:
             return "サーバーからの応答が無効です"
         case .httpError(let code):
-            return "HTTPエラー: \(code)"
+            // Special handling for common HTTP status codes
+            switch code {
+            case 409:
+                return "このチャレンジにはすでに回答済みです"
+            case 400:
+                return "リクエストが無効です"
+            case 401:
+                return "認証が必要です"
+            case 403:
+                return "アクセスが拒否されました"
+            case 404:
+                return "リソースが見つかりません"
+            case 500...599:
+                return "サーバーエラーが発生しました"
+            default:
+                return "HTTPエラー: \(code)"
+            }
         case .decodingError:
             return "データの解析に失敗しました"
         case .serverError(let message):
             return message
         }
     }
+    
+    /// Returns true if this error should be ignored (e.g., cancellation)
+    var shouldIgnore: Bool {
+        return false
+    }
 }
+// MARK: - Error Utilities
+extension Error {
+    /// Check if this error is a cancellation error (network or task)
+    var isCancellationError: Bool {
+        let nsError = self as NSError
+        // URLError.cancelled = -999
+        if nsError.domain == NSURLErrorDomain && nsError.code == -999 {
+            return true
+        }
+        // Swift Concurrency task cancellation
+        if self is CancellationError {
+            return true
+        }
+        return false
+    }
+}
+

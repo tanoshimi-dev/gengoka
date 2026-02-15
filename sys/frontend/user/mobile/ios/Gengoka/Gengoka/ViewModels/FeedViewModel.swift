@@ -31,11 +31,36 @@ final class FeedViewModel {
             #if DEBUG
             print("✅ Successfully loaded \(response.data.count) feed items")
             print("📄 Page: \(response.pagination.page), Total: \(response.pagination.total), Has More: \(response.pagination.hasMore)")
+            if let first = response.data.first {
+                print("📝 First item - Answer ID: \(first.answer.id), Challenge: \(first.challenge.prompt)")
+            } else {
+                print("⚠️ No feed items in response - backend may not have any public answers yet")
+            }
             #endif
         } catch {
             #if DEBUG
             print("❌ Failed to load feed: \(error)")
             print("❌ Error details: \(error.localizedDescription)")
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("❌ Key '\(key.stringValue)' not found at path: \(context.codingPath.map { $0.stringValue })")
+                    print("   Debug description: \(context.debugDescription)")
+                case .typeMismatch(let type, let context):
+                    print("❌ Type mismatch for \(type) at path: \(context.codingPath.map { $0.stringValue })")
+                    print("   Debug description: \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("❌ Value not found for \(type) at path: \(context.codingPath.map { $0.stringValue })")
+                    print("   Debug description: \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("❌ Data corrupted at path: \(context.codingPath.map { $0.stringValue })")
+                    print("   Debug description: \(context.debugDescription)")
+                @unknown default:
+                    print("❌ Unknown decoding error")
+                }
+            }
+            print("\n💡 TIP: Check the console for the raw JSON response from APIClient")
+            print("💡 TIP: Make sure you have at least one public answer in the backend database")
             #endif
             self.error = error
             feedItems = []
@@ -104,7 +129,8 @@ final class FeedViewModel {
             answer: updatedAnswer,
             challenge: item.challenge,
             user: item.user,
-            isLiked: !item.isLiked
+            isLiked: !item.isLiked,
+            hasUserAnswered: item.hasUserAnswered
         )
 
         do {

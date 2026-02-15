@@ -50,5 +50,7 @@ data class DailyChallengeResponseDto(
     @SerialName("category_name")
     val categoryName: String,
     @SerialName("is_completed")
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    @SerialName("user_answer")
+    val userAnswer: AnswerDto? = null
 )

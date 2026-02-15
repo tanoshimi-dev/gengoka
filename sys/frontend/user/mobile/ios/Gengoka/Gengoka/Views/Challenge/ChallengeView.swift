@@ -12,6 +12,15 @@ struct ChallengeView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isTextFieldFocused: Bool
 
+    // Helper to check if error is a duplicate answer error
+    private func isDuplicateAnswerError(_ error: Error?) -> Bool {
+        guard let error = error as? NetworkError else { return false }
+        if case .httpError(let code) = error, code == 409 {
+            return true
+        }
+        return false
+    }
+
     var body: some View {
         ZStack {
             AppColors.backgroundGradient.ignoresSafeArea()
@@ -50,13 +59,19 @@ struct ChallengeView: View {
             }
         }
         .alert("エラー", isPresented: .constant(viewModel.error != nil && viewModel.result == nil && !viewModel.isSubmitting)) {
-            Button("再試行") {
-                Task {
-                    await viewModel.loadChallenge(for: category)
+            if isDuplicateAnswerError(viewModel.error) {
+                Button("閉じる", role: .cancel) {
+                    dismiss()
                 }
-            }
-            Button("閉じる", role: .cancel) {
-                dismiss()
+            } else {
+                Button("再試行") {
+                    Task {
+                        await viewModel.loadChallenge(for: category)
+                    }
+                }
+                Button("閉じる", role: .cancel) {
+                    dismiss()
+                }
             }
         } message: {
             if let error = viewModel.error {
@@ -134,22 +149,49 @@ struct ChallengeView: View {
 
     private func inputSection(_ challenge: Challenge) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            TextEditor(text: $viewModel.answerText)
-                .focused($isTextFieldFocused)
-                .frame(minHeight: 150)
-                .padding(12)
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .overlay(
-                    Group {
-                        if viewModel.answerText.isEmpty {
-                            Text("ここに回答を入力してください...")
-                                .foregroundColor(AppColors.textTertiary)
-                                .padding(16)
-                        }
-                    },
-                    alignment: .topLeading
-                )
+            // Show read-only answer if already completed
+            if viewModel.isAlreadyAnswered {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(AppColors.success)
+                        Text("回答済み")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.success)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(AppColors.success.opacity(0.1))
+                    .cornerRadius(8)
+                    
+                    Text(viewModel.answerText)
+                        .font(.body)
+                        .foregroundColor(AppColors.textPrimary)
+                        .frame(minHeight: 150, alignment: .topLeading)
+                        .padding(12)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                }
+            } else {
+                // Show editable text field if not answered
+                TextEditor(text: $viewModel.answerText)
+                    .focused($isTextFieldFocused)
+                    .frame(minHeight: 150)
+                    .padding(12)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    .overlay(
+                        Group {
+                            if viewModel.answerText.isEmpty {
+                                Text("ここに回答を入力してください...")
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .padding(16)
+                            }
+                        },
+                        alignment: .topLeading
+                    )
+            }
 
             HStack {
                 characterCounter(challenge)
@@ -202,25 +244,47 @@ struct ChallengeView: View {
                 }
             }
             .toggleStyle(SwitchToggleStyle(tint: AppColors.primaryGradientStart))
+            .disabled(viewModel.isAlreadyAnswered)  // ← Disable if already answered
         }
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .opacity(viewModel.isAlreadyAnswered ? 0.6 : 1.0)  // ← Visual feedback
     }
 
     private var submitSection: some View {
-        GradientButton(
-            title: "回答を送信",
-            action: {
-                isTextFieldFocused = false
-                Task {
-                    await viewModel.submitAnswer()
+        Group {
+            if viewModel.isAlreadyAnswered {
+                // Show "Already Answered" button (disabled)
+                Button(action: {}) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("回答済み")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppColors.success)
+                    .cornerRadius(16)
                 }
-            },
-            isEnabled: viewModel.canSubmit,
-            isLoading: viewModel.isSubmitting
-        )
+                .disabled(true)
+            } else {
+                // Show submit button
+                GradientButton(
+                    title: "回答を送信",
+                    action: {
+                        isTextFieldFocused = false
+                        Task {
+                            await viewModel.submitAnswer()
+                        }
+                    },
+                    isEnabled: viewModel.canSubmit,
+                    isLoading: viewModel.isSubmitting
+                )
+            }
+        }
     }
 
     private func errorView(_ error: Error) -> some View {

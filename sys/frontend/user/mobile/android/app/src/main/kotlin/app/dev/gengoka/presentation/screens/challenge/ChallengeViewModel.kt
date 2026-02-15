@@ -46,9 +46,10 @@ class ChallengeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            when (val result = challengeRepository.getChallengesByCategory(categoryId, 1, 1)) {
+            when (val result = challengeRepository.getDailyChallenges()) {
                 is Resource.Success -> {
-                    val challenge = result.data.firstOrNull()
+                    val challenge = result.data.firstOrNull { it.categoryId == categoryId }
+                        ?: result.data.firstOrNull()
                     _uiState.update { it.copy(challenge = challenge, isLoading = false) }
                 }
                 is Resource.Error -> {

@@ -3,7 +3,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::config::Config;
-use crate::models::{Category, Challenge, ChallengeWithCategory, CreateChallengeRequest, DailyChallengeResponse, PaginationParams};
+use crate::models::{Answer, Category, Challenge, ChallengeWithCategory, CreateChallengeRequest, DailyChallengeResponse, PaginationParams};
 use crate::utils;
 
 pub async fn get_daily_challenges(pool: web::Data<PgPool>, req: HttpRequest) -> HttpResponse {
@@ -41,24 +41,30 @@ pub async fn get_daily_challenges(pool: web::Data<PgPool>, req: HttpRequest) -> 
         .flatten()
         .unwrap_or_default();
 
-        let is_completed = if let Some(uid) = user_id {
-            sqlx::query_scalar::<_, bool>(
-                r#"SELECT EXISTS(SELECT 1 FROM answers WHERE challenge_id = $1 AND user_id = $2 AND status = 'active')"#,
+        let (is_completed, user_answer) = if let Some(uid) = user_id {
+            tracing::info!("is_completed query: challenge_id($1)={}, user_id($2)={}", challenge.id, uid);
+            let answer = sqlx::query_as::<_, Answer>(
+                r#"SELECT * FROM answers WHERE challenge_id = $1 AND user_id = $2 AND status = 'active' ORDER BY created_at DESC LIMIT 1"#,
             )
             .bind(challenge.id)
             .bind(uid)
-            .fetch_one(pool.get_ref())
+            .fetch_optional(pool.get_ref())
             .await
-            .unwrap_or(false)
+            .unwrap_or(None);
+
+            (answer.is_some(), answer)
         } else {
-            false
+            (false, None)
         };
 
-        results.push(DailyChallengeResponse {
+        let response = DailyChallengeResponse {
             challenge,
             category_name,
             is_completed,
-        });
+            user_answer,
+        };
+        tracing::info!("DailyChallengeResponse : {:?}", response);
+        results.push(response);
     }
 
     utils::success(results)

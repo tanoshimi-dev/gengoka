@@ -15,6 +15,7 @@ enum APIEndpoint {
     case categories
     case dailyChallenges
     case challenge(id: UUID)
+    case challengeAnswer(challengeId: UUID)  // Get user's answer for a challenge
     case submitAnswer(challengeId: UUID)
     case feed(page: Int, filter: FeedFilter)
     case user(id: UUID)
@@ -41,6 +42,8 @@ enum APIEndpoint {
             return "/challenges/daily"
         case .challenge(let id):
             return "/challenges/\(id.uuidString)"
+        case .challengeAnswer(let challengeId):
+            return "/challenges/\(challengeId.uuidString)/my-answer"
         case .submitAnswer(let challengeId):
             return "/challenges/\(challengeId.uuidString)/answers"
         case .feed(let page, let filter):
@@ -68,7 +71,7 @@ enum APIEndpoint {
 
     var method: HTTPMethod {
         switch self {
-        case .categories, .dailyChallenges, .challenge, .feed, .user, .currentUser, .userStats, .comments:
+        case .categories, .dailyChallenges, .challenge, .challengeAnswer, .feed, .user, .currentUser, .userStats, .comments:
             return .get
         case .login, .register, .refreshToken, .submitAnswer, .followUser, .likeAnswer, .addComment:
             return .post

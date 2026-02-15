@@ -8,6 +8,7 @@ import Foundation
 @Observable
 final class ChallengeViewModel {
     var challenge: Challenge?
+    var existingAnswer: Answer?  // ← User's existing answer if already completed
     var answerText = ""
     var isPublic = true
     var isLoading = false
@@ -16,6 +17,11 @@ final class ChallengeViewModel {
     var result: AnswerResult?
 
     private let apiClient = APIClient.shared
+    
+    /// True if user has already answered this challenge
+    var isAlreadyAnswered: Bool {
+        existingAnswer != nil
+    }
 
     var characterCount: Int {
         answerText.count
@@ -27,7 +33,7 @@ final class ChallengeViewModel {
     }
 
     var canSubmit: Bool {
-        isValidLength && !isSubmitting && !answerText.isEmpty
+        !isAlreadyAnswered && isValidLength && !isSubmitting && !answerText.isEmpty
     }
 
     var characterCountColor: CharacterCountColor {
@@ -56,21 +62,52 @@ final class ChallengeViewModel {
             print("✅ Successfully decoded \(dailyChallenges.count) daily challenges")
             print("📋 Looking for category: \(category.id)")
             for dc in dailyChallenges {
-                print("  - Challenge: \(dc.challenge.id), Category: \(dc.challenge.categoryId), Name: \(dc.categoryName)")
+                print("  - Challenge: \(dc.challenge.id), Category: \(dc.challenge.categoryId), Name: \(dc.categoryName), Completed: \(dc.isCompleted)")
             }
             #endif
             
             // Try to find a challenge for the selected category
-            challenge = dailyChallenges.first { $0.challenge.categoryId == category.id }?.challenge 
-                ?? dailyChallenges.first?.challenge
-            
-            #if DEBUG
-            if let challenge = challenge {
-                print("✅ Selected challenge: \(challenge.prompt)")
-            } else {
-                print("⚠️ No challenge found")
+            if let dailyChallenge = dailyChallenges.first(where: { $0.challenge.categoryId == category.id }) 
+                ?? dailyChallenges.first {
+                challenge = dailyChallenge.challenge
+                existingAnswer = dailyChallenge.userAnswer
+                
+                // Pre-fill the answer if already completed
+                if let answer = dailyChallenge.userAnswer {
+                    answerText = answer.content
+                    isPublic = answer.isPublic
+                }
+                
+                #if DEBUG
+                if let challenge = challenge {
+                    print("✅ Selected challenge:")
+                    print("  📝 Prompt: \(challenge.prompt)")
+                    print("  🆔 ID: \(challenge.id)")
+                    print("  📁 Category ID: \(challenge.categoryId)")
+                    print("  📏 Characters: \(challenge.minCharacters)-\(challenge.maxCharacters)")
+                    print("  ⚡️ Difficulty: \(challenge.difficulty.rawValue)")
+                    print("  📅 Created: \(challenge.createdAt)")
+                    if let desc = challenge.description {
+                        print("  📄 Description: \(desc)")
+                    }
+                    if let releaseDate = challenge.releaseDate {
+                        print("  🗓️ Release Date: \(releaseDate)")
+                    }
+                    if let answerCount = challenge.answerCount {
+                        print("  💬 Answer Count: \(answerCount)")
+                    }
+                    if let status = challenge.status {
+                        print("  🔖 Status: \(status)")
+                    }
+                    
+                    if let answer = existingAnswer {
+                        print("⚠️ User has already answered this challenge (Answer ID: \(answer.id))")
+                    }
+                } else {
+                    print("⚠️ No challenge found")
+                }
+                #endif
             }
-            #endif
         } catch {
             #if DEBUG
             print("❌ Failed to load challenge: \(error)")
@@ -78,6 +115,7 @@ final class ChallengeViewModel {
             #endif
             self.error = error
             challenge = nil
+            existingAnswer = nil
         }
 
         isLoading = false
@@ -89,9 +127,32 @@ final class ChallengeViewModel {
 
         do {
             challenge = try await apiClient.request(.challenge(id: id))
+            
+            // Try to get user's existing answer for this challenge
+            do {
+                existingAnswer = try await apiClient.request(.challengeAnswer(challengeId: id))
+                
+                // Pre-fill if already answered
+                if let answer = existingAnswer {
+                    answerText = answer.content
+                    isPublic = answer.isPublic
+                    
+                    #if DEBUG
+                    print("⚠️ User has already answered this challenge (Answer ID: \(answer.id))")
+                    #endif
+                }
+            } catch {
+                // No answer found or endpoint doesn't exist - user hasn't answered
+                existingAnswer = nil
+                
+                #if DEBUG
+                print("ℹ️ No existing answer found for challenge \(id)")
+                #endif
+            }
         } catch {
             self.error = error
             challenge = nil
+            existingAnswer = nil
         }
 
         isLoading = false
@@ -105,8 +166,30 @@ final class ChallengeViewModel {
 
         do {
             let submission = AnswerSubmission(content: answerText, isPublic: isPublic)
-            result = try await apiClient.request(.submitAnswer(challengeId: challenge.id), body: submission)
+            
+            #if DEBUG
+            print("📤 Submitting answer for challenge: \(challenge.id)")
+            print("   Content: \(answerText)")
+            print("   Is Public: \(isPublic)")
+            #endif
+            
+            let response: AnswerResult = try await apiClient.request(.submitAnswer(challengeId: challenge.id), body: submission)
+            result = response
+            
+            #if DEBUG
+            print("✅ Answer submitted successfully!")
+            print("   Answer ID: \(response.answer.id)")
+            if let scoring = response.scoringDetails {
+                print("   Score: \(scoring.overallScore)")
+            }
+            #endif
         } catch {
+            #if DEBUG
+            print("❌ Failed to submit answer: \(error)")
+            if let networkError = error as? NetworkError {
+                print("   Network error: \(networkError.errorDescription ?? "Unknown")")
+            }
+            #endif
             self.error = error
             result = nil
         }
@@ -118,5 +201,6 @@ final class ChallengeViewModel {
         answerText = ""
         result = nil
         error = nil
+        existingAnswer = nil
     }
 }

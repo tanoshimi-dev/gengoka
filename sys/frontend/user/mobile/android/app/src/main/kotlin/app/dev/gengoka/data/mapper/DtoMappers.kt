@@ -22,10 +22,24 @@ fun ChallengeDto.toDomain() = Challenge(
     answerCount = answerCount
 )
 
+fun AnswerDto.toDomain() = Answer(
+    id = id,
+    challengeId = challengeId,
+    userId = userId,
+    content = content,
+    score = score,
+    aiFeedback = aiFeedback?.toDomain(),
+    likeCount = likeCount,
+    commentCount = commentCount,
+    viewCount = viewCount,
+    createdAt = createdAt
+)
+
 fun DailyChallengeResponseDto.toDomain() = DailyChallenge(
     challenge = challenge.toDomain(),
     categoryName = categoryName,
-    isCompleted = isCompleted
+    isCompleted = isCompleted,
+    userAnswer = userAnswer?.toDomain()
 )
 
 fun DailyChallengeResponseDto.toChallengeWithCategory() = ChallengeWithCategory(
@@ -43,7 +57,8 @@ fun DailyChallengeResponseDto.toChallengeWithCategory() = ChallengeWithCategory(
         icon = null,
         color = null
     ),
-    isCompleted = isCompleted
+    isCompleted = isCompleted,
+    userAnswer = userAnswer?.toDomain()
 )
 
 fun ChallengeWithCategoryDto.toDomain() = ChallengeWithCategory(

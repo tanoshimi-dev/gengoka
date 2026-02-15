@@ -5,7 +5,6 @@
 
 import Foundation
 
-
 @Observable
 final class HomeViewModel {
     var categories: [Category] = []
@@ -15,9 +14,15 @@ final class HomeViewModel {
     var error: Error?
 
     private let apiClient = APIClient.shared
-
+    private var isInitialLoadComplete = false
     
     func loadData() async {
+        // Prevent duplicate initial loads
+        guard !isLoading else {
+            print("⚠️ Already loading, skipping duplicate loadData() call")
+            return
+        }
+        
         isLoading = true
         error = nil
 
@@ -30,9 +35,14 @@ final class HomeViewModel {
             print("✅ Categories loaded: \(loadedCategories.count) items")
         } catch {
             print("❌ Categories error: \(error)")
+            
+            // Don't show cancellation errors to the user
+            if !isCancellationError(error) {
+                self.error = error
+            }
+            
             categories = Category.mockCategories
             loadedCategories = categories
-            self.error = error
         }
 
         // Load user stats
@@ -44,48 +54,43 @@ final class HomeViewModel {
         } catch {
             print("❌ User stats error: \(error)")
             userStats = UserStats.mock
-            if self.error == nil {
+            
+            if self.error == nil && !isCancellationError(error) {
                 self.error = error
             }
         }
 
-        // Load daily challenges (try both formats)
+        // Load daily challenges
         do {
             print("📡 Loading daily challenges...")
-            
-            // Try to load as DailyChallenge first (iOS format with nested structure)
-            do {
-                let loadedDaily: [DailyChallenge] = try await apiClient.request(.dailyChallenges)
-                dailyChallenges = loadedDaily
-                print("✅ Daily challenges loaded (iOS format): \(loadedDaily.count) items")
-            } catch let dailyError {
-                // If that fails, try loading as Challenge array (Android format)
-                print("⚠️ iOS format failed, trying Android format...")
-                let challenges: [Challenge] = try await apiClient.request(.dailyChallenges)
-                
-                // Convert to DailyChallenge with category names
-                dailyChallenges = challenges.map { challenge in
-                    let categoryName = loadedCategories.first { $0.id == challenge.categoryId }?.name ?? "未分類"
-                    return DailyChallenge(
-                        challenge: challenge,
-                        categoryName: categoryName,
-                        isCompleted: false
-                    )
-                }
-                print("✅ Daily challenges loaded (Android format): \(challenges.count) items")
-            }
+            let loadedDaily: [DailyChallenge] = try await apiClient.request(.dailyChallenges)
+            dailyChallenges = loadedDaily
+            print("✅ Daily challenges loaded: \(loadedDaily.count) items")
         } catch {
             print("❌ Daily challenges error: \(error)")
             dailyChallenges = []
-            if self.error == nil {
+
+            if self.error == nil && !isCancellationError(error) {
                 self.error = error
             }
         }
 
         isLoading = false
+        isInitialLoadComplete = true
+    }
+    
+    // Helper to check if error is a cancellation error
+    private func isCancellationError(_ error: Error) -> Bool {
+        if error.isCancellationError {
+            print("⚠️ Request was cancelled, ignoring error")
+            return true
+        }
+        return false
     }
 
     func refresh() async {
+        // Allow refresh even if already loaded
+        isInitialLoadComplete = false
         await loadData()
     }
 }
