@@ -145,6 +145,13 @@ fun UserStatsDto.toDomain() = UserStats(
     averageScore = averageScore
 )
 
+fun LinkedSocialAccountDto.toDomain() = LinkedSocialAccount(
+    provider = provider,
+    providerEmail = providerEmail,
+    providerName = providerName,
+    linkedAt = linkedAt
+)
+
 fun CommentWithUserDto.toDomain() = CommentWithUser(
     id = id,
     answerId = answerId,

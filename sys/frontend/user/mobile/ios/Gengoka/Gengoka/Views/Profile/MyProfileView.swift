@@ -179,6 +179,29 @@ struct MyProfileView: View {
 
     private var settingsSection: some View {
         VStack(spacing: 0) {
+            NavigationLink {
+                LinkedAccountsView()
+            } label: {
+                HStack(spacing: 16) {
+                    Image(systemName: "link.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(AppColors.primaryGradientStart)
+                        .frame(width: 28)
+
+                    Text("アカウント連携")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            Divider().padding(.leading, 52)
             SettingsRow(icon: "bell.fill", title: "通知設定", iconColor: AppColors.error)
             Divider().padding(.leading, 52)
             SettingsRow(icon: "lock.fill", title: "プライバシー設定", iconColor: AppColors.primaryGradientStart)

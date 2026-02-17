@@ -1,8 +1,8 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 
 use crate::config::Config;
-use crate::models::{AuthTokens, SocialLoginRequest, SocialUserInfo, UserSummary};
+use crate::models::{AuthTokens, LinkAccountRequest, LinkedSocialAccount, SocialLoginRequest, SocialUserInfo, UserSummary};
 use crate::services::social_auth;
 use crate::utils;
 
@@ -225,4 +225,232 @@ async fn find_or_create_user(
             avatar: user.2,
         },
     }))
+}
+
+// ============ Account Linking Handlers ============
+
+pub async fn get_linked_accounts(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    let user_id = match utils::get_user_id(&req) {
+        Some(id) => id,
+        None => return utils::unauthorized("Authentication required"),
+    };
+
+    let accounts = sqlx::query_as::<_, (String, Option<String>, Option<String>, chrono::DateTime<chrono::Utc>)>(
+        r#"
+        SELECT provider, provider_email, provider_name, created_at
+        FROM user_social_accounts
+        WHERE user_id = $1
+        ORDER BY created_at
+        "#,
+    )
+    .bind(user_id)
+    .fetch_all(pool.get_ref())
+    .await;
+
+    match accounts {
+        Ok(rows) => {
+            let linked: Vec<LinkedSocialAccount> = rows
+                .into_iter()
+                .map(|(provider, provider_email, provider_name, created_at)| LinkedSocialAccount {
+                    provider,
+                    provider_email,
+                    provider_name,
+                    linked_at: created_at,
+                })
+                .collect();
+            utils::success(linked)
+        }
+        Err(e) => {
+            tracing::error!("Failed to fetch linked accounts: {}", e);
+            utils::internal_error("Failed to fetch linked accounts")
+        }
+    }
+}
+
+pub async fn link_account(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    config: web::Data<Config>,
+    body: web::Json<LinkAccountRequest>,
+) -> HttpResponse {
+    let user_id = match utils::get_user_id(&req) {
+        Some(id) => id,
+        None => return utils::unauthorized("Authentication required"),
+    };
+
+    let provider = body.provider.to_lowercase();
+    if !["google", "apple", "line"].contains(&provider.as_str()) {
+        return utils::bad_request("Unsupported provider. Use: google, apple, line");
+    }
+
+    // Check if already linked
+    let existing = sqlx::query_as::<_, (uuid::Uuid,)>(
+        "SELECT user_id FROM user_social_accounts WHERE user_id = $1 AND provider = $2",
+    )
+    .bind(user_id)
+    .bind(&provider)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    if let Ok(Some(_)) = existing {
+        return utils::conflict("This provider is already linked to your account");
+    }
+
+    // Verify token and get social user info
+    let social_user = match provider.as_str() {
+        "google" => {
+            let id_token = match &body.id_token {
+                Some(t) => t,
+                None => return utils::bad_request("id_token is required for Google"),
+            };
+            match social_auth::verify_google_token(id_token, &config.social_auth).await {
+                Ok(user) => user,
+                Err(e) => {
+                    tracing::error!("Google token verification failed: {}", e);
+                    return utils::unauthorized("Google authentication failed");
+                }
+            }
+        }
+        "apple" => {
+            let id_token = match &body.id_token {
+                Some(t) => t,
+                None => return utils::bad_request("id_token is required for Apple"),
+            };
+            match social_auth::verify_apple_token(id_token, &config.social_auth).await {
+                Ok(user) => user,
+                Err(e) => {
+                    tracing::error!("Apple token verification failed: {}", e);
+                    return utils::unauthorized("Apple authentication failed");
+                }
+            }
+        }
+        "line" => {
+            let access_token = match &body.access_token {
+                Some(t) => t,
+                None => return utils::bad_request("access_token is required for LINE"),
+            };
+            match social_auth::verify_line_token(access_token, &config.social_auth).await {
+                Ok(user) => user,
+                Err(e) => {
+                    tracing::error!("LINE token verification failed: {}", e);
+                    return utils::unauthorized("LINE authentication failed");
+                }
+            }
+        }
+        _ => unreachable!(),
+    };
+
+    // Check if this social account is already linked to another user
+    let other_link = sqlx::query_as::<_, (uuid::Uuid,)>(
+        "SELECT user_id FROM user_social_accounts WHERE provider = $1 AND provider_user_id = $2",
+    )
+    .bind(&social_user.provider)
+    .bind(&social_user.provider_user_id)
+    .fetch_optional(pool.get_ref())
+    .await;
+
+    if let Ok(Some((other_uid,))) = other_link {
+        if other_uid != user_id {
+            return utils::conflict("This social account is already linked to another user");
+        }
+    }
+
+    // Insert the link
+    match sqlx::query(
+        r#"
+        INSERT INTO user_social_accounts
+            (user_id, provider, provider_user_id, provider_email, provider_name, provider_avatar)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (provider, provider_user_id) DO NOTHING
+        "#,
+    )
+    .bind(user_id)
+    .bind(&social_user.provider)
+    .bind(&social_user.provider_user_id)
+    .bind(&social_user.email)
+    .bind(&social_user.name)
+    .bind(&social_user.avatar)
+    .execute(pool.get_ref())
+    .await
+    {
+        Ok(_) => utils::created(LinkedSocialAccount {
+            provider: social_user.provider,
+            provider_email: social_user.email,
+            provider_name: social_user.name,
+            linked_at: chrono::Utc::now(),
+        }),
+        Err(e) => {
+            tracing::error!("Failed to link account: {}", e);
+            utils::internal_error("Failed to link account")
+        }
+    }
+}
+
+pub async fn unlink_account(
+    req: HttpRequest,
+    pool: web::Data<PgPool>,
+    path: web::Path<String>,
+) -> HttpResponse {
+    let user_id = match utils::get_user_id(&req) {
+        Some(id) => id,
+        None => return utils::unauthorized("Authentication required"),
+    };
+
+    let provider = path.into_inner().to_lowercase();
+    if !["google", "apple", "line"].contains(&provider.as_str()) {
+        return utils::bad_request("Unsupported provider. Use: google, apple, line");
+    }
+
+    // Safety check: ensure user has another auth method
+    let has_password = sqlx::query_as::<_, (bool,)>(
+        "SELECT password_hash IS NOT NULL FROM users WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_optional(pool.get_ref())
+    .await
+    .ok()
+    .flatten()
+    .map(|(v,)| v)
+    .unwrap_or(false);
+
+    let other_social_count = sqlx::query_as::<_, (i64,)>(
+        "SELECT COUNT(*) FROM user_social_accounts WHERE user_id = $1 AND provider != $2",
+    )
+    .bind(user_id)
+    .bind(&provider)
+    .fetch_one(pool.get_ref())
+    .await
+    .map(|(c,)| c)
+    .unwrap_or(0);
+
+    if !has_password && other_social_count == 0 {
+        return utils::bad_request(
+            "Cannot unlink the last authentication method. Link another account or set a password first.",
+        );
+    }
+
+    // Delete the link
+    match sqlx::query(
+        "DELETE FROM user_social_accounts WHERE user_id = $1 AND provider = $2",
+    )
+    .bind(user_id)
+    .bind(&provider)
+    .execute(pool.get_ref())
+    .await
+    {
+        Ok(result) => {
+            if result.rows_affected() == 0 {
+                utils::not_found("Social account link not found")
+            } else {
+                utils::no_content()
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to unlink account: {}", e);
+            utils::internal_error("Failed to unlink account")
+        }
+    }
 }

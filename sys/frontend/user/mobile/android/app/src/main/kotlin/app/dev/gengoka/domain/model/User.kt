@@ -36,3 +36,10 @@ data class UserStats(
     val bestStreak: Int,
     val averageScore: Double
 )
+
+data class LinkedSocialAccount(
+    val provider: String,
+    val providerEmail: String?,
+    val providerName: String?,
+    val linkedAt: String
+)

@@ -4,11 +4,14 @@ import app.dev.gengoka.core.network.TokenManager
 import app.dev.gengoka.core.util.Resource
 import app.dev.gengoka.core.util.safeApiCall
 import app.dev.gengoka.data.api.GengokApi
+import app.dev.gengoka.data.dto.LinkAccountRequestDto
 import app.dev.gengoka.data.dto.LoginRequestDto
 import app.dev.gengoka.data.dto.LogoutRequestDto
 import app.dev.gengoka.data.dto.RefreshRequestDto
 import app.dev.gengoka.data.dto.RegisterRequestDto
 import app.dev.gengoka.data.dto.SocialLoginRequestDto
+import app.dev.gengoka.data.mapper.toDomain
+import app.dev.gengoka.domain.model.LinkedSocialAccount
 import app.dev.gengoka.domain.repository.AuthRepository
 import javax.inject.Inject
 
@@ -68,6 +71,35 @@ class AuthRepositoryImpl @Inject constructor(
                 // Ignore API errors on logout — clear tokens regardless
             }
             tokenManager.clearTokens()
+        }
+    }
+
+    override suspend fun getLinkedAccounts(): Resource<List<LinkedSocialAccount>> {
+        return safeApiCall {
+            api.getLinkedAccounts().data.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun linkAccount(
+        provider: String,
+        idToken: String?,
+        accessToken: String?
+    ): Resource<LinkedSocialAccount> {
+        return safeApiCall {
+            val response = api.linkAccount(
+                LinkAccountRequestDto(
+                    provider = provider,
+                    idToken = idToken,
+                    accessToken = accessToken
+                )
+            )
+            response.data.toDomain()
+        }
+    }
+
+    override suspend fun unlinkAccount(provider: String): Resource<Unit> {
+        return safeApiCall {
+            api.unlinkAccount(provider)
         }
     }
 }

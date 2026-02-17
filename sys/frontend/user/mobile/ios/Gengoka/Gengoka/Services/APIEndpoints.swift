@@ -29,6 +29,11 @@ enum APIEndpoint {
     case comments(answerId: UUID)
     case addComment(answerId: UUID)
 
+    // Account linking
+    case linkedAccounts
+    case linkAccount
+    case unlinkAccount(provider: String)
+
     var path: String {
         switch self {
         case .login:
@@ -69,16 +74,22 @@ enum APIEndpoint {
             return "/answers/\(answerId.uuidString)/comments"
         case .addComment(let answerId):
             return "/answers/\(answerId.uuidString)/comments"
+        case .linkedAccounts:
+            return "/users/me/social-accounts"
+        case .linkAccount:
+            return "/users/me/social-accounts"
+        case .unlinkAccount(let provider):
+            return "/users/me/social-accounts/\(provider)"
         }
     }
 
     var method: HTTPMethod {
         switch self {
-        case .categories, .dailyChallenges, .challenge, .challengeAnswer, .feed, .user, .currentUser, .userStats, .comments:
+        case .categories, .dailyChallenges, .challenge, .challengeAnswer, .feed, .user, .currentUser, .userStats, .comments, .linkedAccounts:
             return .get
-        case .login, .register, .refreshToken, .socialLogin, .submitAnswer, .followUser, .likeAnswer, .addComment:
+        case .login, .register, .refreshToken, .socialLogin, .submitAnswer, .followUser, .likeAnswer, .addComment, .linkAccount:
             return .post
-        case .unfollowUser, .unlikeAnswer:
+        case .unfollowUser, .unlikeAnswer, .unlinkAccount:
             return .delete
         }
     }

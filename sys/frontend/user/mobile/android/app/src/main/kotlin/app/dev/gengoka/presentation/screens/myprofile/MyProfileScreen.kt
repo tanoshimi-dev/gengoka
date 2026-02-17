@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
@@ -70,6 +71,7 @@ import app.dev.gengoka.presentation.theme.WarningYellow
 fun MyProfileScreen(
     onAnswerClick: (answerId: String) -> Unit,
     onEditProfileClick: () -> Unit,
+    onLinkedAccountsClick: () -> Unit = {},
     viewModel: MyProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -130,7 +132,10 @@ fun MyProfileScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Settings Section
-                    SettingsSection(onLogout = viewModel::logout)
+                    SettingsSection(
+                        onLinkedAccountsClick = onLinkedAccountsClick,
+                        onLogout = viewModel::logout
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(100.dp))
@@ -416,7 +421,10 @@ private fun SocialStatItem(value: String, label: String) {
 }
 
 @Composable
-private fun SettingsSection(onLogout: () -> Unit) {
+private fun SettingsSection(
+    onLinkedAccountsClick: () -> Unit,
+    onLogout: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -425,6 +433,16 @@ private fun SettingsSection(onLogout: () -> Unit) {
         color = SurfaceWhite
     ) {
         Column {
+            SettingsRow(
+                icon = Icons.Filled.Link,
+                title = "アカウント連携",
+                iconColor = PrimaryPurple,
+                onClick = onLinkedAccountsClick
+            )
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 52.dp),
+                color = BorderLight
+            )
             SettingsRow(
                 icon = Icons.Filled.Notifications,
                 title = "通知設定",

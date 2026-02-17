@@ -17,6 +17,7 @@ import app.dev.gengoka.presentation.screens.auth.RegisterScreen
 import app.dev.gengoka.presentation.screens.challenge.ChallengeScreen
 import app.dev.gengoka.presentation.screens.feed.FeedScreen
 import app.dev.gengoka.presentation.screens.home.HomeScreen
+import app.dev.gengoka.presentation.screens.linkedaccounts.LinkedAccountsScreen
 import app.dev.gengoka.presentation.screens.myprofile.MyProfileScreen
 import app.dev.gengoka.presentation.screens.profile.ProfileScreen
 import app.dev.gengoka.presentation.screens.result.ResultScreen
@@ -150,7 +151,17 @@ fun NavGraph(
                 },
                 onEditProfileClick = {
                     // TODO: Navigate to edit profile screen
+                },
+                onLinkedAccountsClick = {
+                    navController.navigate(Screen.LinkedAccounts.route)
                 }
+            )
+        }
+
+        // Linked Accounts Screen
+        composable(Screen.LinkedAccounts.route) {
+            LinkedAccountsScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

@@ -325,6 +325,23 @@ pub struct SocialUserInfo {
     pub avatar: Option<String>,
 }
 
+// ============ Account Linking ============
+
+#[derive(Debug, Serialize)]
+pub struct LinkedSocialAccount {
+    pub provider: String,
+    pub provider_email: Option<String>,
+    pub provider_name: Option<String>,
+    pub linked_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LinkAccountRequest {
+    pub provider: String,
+    pub id_token: Option<String>,
+    pub access_token: Option<String>,
+}
+
 // ============ Query Parameters ============
 
 #[derive(Debug, Deserialize)]

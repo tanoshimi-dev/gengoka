@@ -135,6 +135,15 @@ interface GengokApi {
     @GET("users/me/stats")
     suspend fun getUserStats(): ApiResponse<UserStatsDto>
 
+    @GET("users/me/social-accounts")
+    suspend fun getLinkedAccounts(): ApiResponse<List<LinkedSocialAccountDto>>
+
+    @POST("users/me/social-accounts")
+    suspend fun linkAccount(@Body request: LinkAccountRequestDto): ApiResponse<LinkedSocialAccountDto>
+
+    @DELETE("users/me/social-accounts/{provider}")
+    suspend fun unlinkAccount(@Path("provider") provider: String): ApiResponse<Unit?>
+
     // Feed & Rankings
     @GET("feed")
     suspend fun getFeed(

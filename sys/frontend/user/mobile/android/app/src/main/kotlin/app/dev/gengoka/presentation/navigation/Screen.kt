@@ -15,6 +15,7 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: String) = "profile/$userId"
     }
     data object MyProfile : Screen("myprofile")
+    data object LinkedAccounts : Screen("linkedaccounts")
 }
 
 sealed class BottomNavItem(

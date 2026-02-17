@@ -85,6 +85,34 @@ struct SocialLoginRequest: Codable {
     }
 }
 
+struct LinkAccountRequest: Codable {
+    let provider: String
+    let idToken: String?
+    let accessToken: String?
+
+    enum CodingKeys: String, CodingKey {
+        case provider
+        case idToken = "id_token"
+        case accessToken = "access_token"
+    }
+}
+
+struct LinkedSocialAccount: Codable, Identifiable {
+    let provider: String
+    let providerEmail: String?
+    let providerName: String?
+    let linkedAt: Date
+
+    var id: String { provider }
+
+    enum CodingKeys: String, CodingKey {
+        case provider
+        case providerEmail = "provider_email"
+        case providerName = "provider_name"
+        case linkedAt = "linked_at"
+    }
+}
+
 struct RefreshTokenRequest: Codable {
     let refreshToken: String
     
