@@ -70,6 +70,8 @@ rand = "0.8"
 wiremock = "0.6"
 rsa = "0.9"
 base64 = "0.22"
+serial_test = "3"
+actix-http = "3"
 
 [profile.release]
 lto = true

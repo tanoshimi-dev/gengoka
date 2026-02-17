@@ -1,12 +1,3 @@
-mod config;
-mod db;
-mod handlers;
-mod middleware;
-mod models;
-mod routes;
-mod services;
-mod utils;
-
 use std::sync::Arc;
 
 use actix_files::Files;
@@ -16,7 +7,12 @@ use sqlx::Executor;
 use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use services::scheduler::ChallengeScheduler;
+use gengoka_backend::config;
+use gengoka_backend::db;
+use gengoka_backend::handlers;
+use gengoka_backend::middleware;
+use gengoka_backend::routes;
+use gengoka_backend::services::scheduler::ChallengeScheduler;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
