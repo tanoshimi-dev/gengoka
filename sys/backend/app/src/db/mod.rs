@@ -416,5 +416,36 @@ pub async fn run_migrations(pool: &DbPool) {
         .await
         .ok();
 
+    // User social accounts table for OAuth (Google, Apple, LINE)
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS user_social_accounts (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            provider VARCHAR(20) NOT NULL,
+            provider_user_id VARCHAR(255) NOT NULL,
+            provider_email VARCHAR(255),
+            provider_name VARCHAR(255),
+            provider_avatar VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE(provider, provider_user_id)
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("Failed to create user_social_accounts table");
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_social_accounts_user ON user_social_accounts(user_id)")
+        .execute(pool)
+        .await
+        .ok();
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_social_accounts_provider ON user_social_accounts(provider, provider_user_id)")
+        .execute(pool)
+        .await
+        .ok();
+
     info!("Migrations completed successfully");
 }

@@ -304,6 +304,27 @@ pub struct Claims {
     pub iat: usize,
 }
 
+// ============ Social Auth ============
+
+#[derive(Debug, Deserialize)]
+pub struct SocialLoginRequest {
+    pub provider: String,
+    pub id_token: Option<String>,
+    pub access_token: Option<String>,
+    pub authorization_code: Option<String>,
+    pub nonce: Option<String>,
+    pub device_info: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct SocialUserInfo {
+    pub provider: String,
+    pub provider_user_id: String,
+    pub email: Option<String>,
+    pub name: Option<String>,
+    pub avatar: Option<String>,
+}
+
 // ============ Query Parameters ============
 
 #[derive(Debug, Deserialize)]

@@ -9,6 +9,17 @@ pub struct Config {
     pub challenge_generation: ChallengeGenerationConfig,
     pub admin: AdminConfig,
     pub auth: AuthConfig,
+    pub social_auth: SocialAuthConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct SocialAuthConfig {
+    pub google_client_id_ios: String,
+    pub google_client_id_android: String,
+    pub apple_client_id: String,
+    pub apple_team_id: String,
+    pub line_channel_id: String,
+    pub line_channel_secret: String,
 }
 
 #[derive(Debug, Clone)]
@@ -136,6 +147,15 @@ impl Config {
                     .unwrap_or_else(|_| "90".to_string())
                     .parse()
                     .unwrap_or(90),
+            },
+            social_auth: SocialAuthConfig {
+                google_client_id_ios: env::var("GOOGLE_CLIENT_ID_IOS").unwrap_or_default(),
+                google_client_id_android: env::var("GOOGLE_CLIENT_ID_ANDROID").unwrap_or_default(),
+                apple_client_id: env::var("APPLE_CLIENT_ID")
+                    .unwrap_or_else(|_| "app.dev.gengoka".to_string()),
+                apple_team_id: env::var("APPLE_TEAM_ID").unwrap_or_default(),
+                line_channel_id: env::var("LINE_CHANNEL_ID").unwrap_or_default(),
+                line_channel_secret: env::var("LINE_CHANNEL_SECRET").unwrap_or_default(),
             },
             admin: AdminConfig {
                 session_secret: env::var("ADMIN_SESSION_SECRET")

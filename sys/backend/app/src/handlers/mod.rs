@@ -8,6 +8,7 @@ pub mod follow;
 pub mod health;
 pub mod like;
 pub mod ranking;
+pub mod social_auth;
 pub mod user;
 
 pub use answer::*;
@@ -19,4 +20,5 @@ pub use follow::*;
 pub use health::*;
 pub use like::*;
 pub use ranking::*;
+pub use social_auth::*;
 pub use user::*;

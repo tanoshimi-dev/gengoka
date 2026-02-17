@@ -12,6 +12,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .route("/auth/login", web::post().to(handlers::login))
             .route("/auth/refresh", web::post().to(handlers::refresh))
             .route("/auth/logout", web::post().to(handlers::logout))
+            .route("/auth/social", web::post().to(handlers::social_login))
             // Categories
             .route("/categories", web::get().to(handlers::list_categories))
             .route("/categories/{id}", web::get().to(handlers::get_category))
