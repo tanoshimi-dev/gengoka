@@ -2,6 +2,7 @@ use actix_web::{dev::ServiceResponse, test, web, App};
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use gengoka_backend::config::{
     AdminConfig, AuthConfig, ChallengeGenerationConfig, Config, DatabaseConfig, GeminiConfig,
@@ -185,4 +186,102 @@ pub async fn login_test_user(
     let body = test::read_body(resp).await;
     let json: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
     (status, json)
+}
+
+/// Register a user and return (user_id, access_token).
+pub async fn register_and_login(
+    app: &impl actix_web::dev::Service<
+        actix_http::Request,
+        Response = ServiceResponse,
+        Error = actix_web::Error,
+    >,
+    email: &str,
+    password: &str,
+    name: &str,
+) -> (Uuid, String) {
+    let (status, body) = register_test_user(app, email, password, name).await;
+    assert_eq!(status, 201, "register_and_login failed: {:?}", body);
+    let user_id = Uuid::parse_str(body["data"]["user"]["id"].as_str().unwrap()).unwrap();
+    let token = body["data"]["access_token"].as_str().unwrap().to_string();
+    (user_id, token)
+}
+
+/// Insert a category directly into the DB. Returns the category id.
+pub async fn create_test_category(pool: &PgPool, name: &str) -> Uuid {
+    let row: (Uuid,) = sqlx::query_as(
+        r#"
+        INSERT INTO categories (name, description, icon, color, char_limit, sort_order, status)
+        VALUES ($1, 'Test category', 'icon', '#FF0000', 200, 0, 'active')
+        RETURNING id
+        "#,
+    )
+    .bind(name)
+    .fetch_one(pool)
+    .await
+    .expect("Failed to create test category");
+    row.0
+}
+
+/// Insert a challenge directly into the DB. Returns the challenge id.
+pub async fn create_test_challenge(pool: &PgPool, category_id: Uuid, title: &str) -> Uuid {
+    let row: (Uuid,) = sqlx::query_as(
+        r#"
+        INSERT INTO challenges (category_id, title, description, char_limit, release_date, status)
+        VALUES ($1, $2, 'Test challenge', 200, CURRENT_DATE, 'active')
+        RETURNING id
+        "#,
+    )
+    .bind(category_id)
+    .bind(title)
+    .fetch_one(pool)
+    .await
+    .expect("Failed to create test challenge");
+    row.0
+}
+
+/// Create an answer via the API. Returns (status_code, json_body).
+pub async fn create_test_answer(
+    app: &impl actix_web::dev::Service<
+        actix_http::Request,
+        Response = ServiceResponse,
+        Error = actix_web::Error,
+    >,
+    challenge_id: Uuid,
+    access_token: &str,
+    content: &str,
+) -> (u16, Value) {
+    let req = test::TestRequest::post()
+        .uri(&format!("/api/v1/challenges/{}/answers", challenge_id))
+        .insert_header(("Authorization", format!("Bearer {}", access_token)))
+        .set_json(serde_json::json!({ "content": content }))
+        .to_request();
+
+    let resp: ServiceResponse = test::call_service(app, req).await;
+    let status = resp.status().as_u16();
+    let body = test::read_body(resp).await;
+    let json: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
+    (status, json)
+}
+
+/// Insert a social account link directly into the DB.
+pub async fn insert_social_account(
+    pool: &PgPool,
+    user_id: Uuid,
+    provider: &str,
+    provider_user_id: &str,
+) {
+    sqlx::query(
+        r#"
+        INSERT INTO user_social_accounts (user_id, provider, provider_user_id, provider_email, provider_name)
+        VALUES ($1, $2, $3, $4, $5)
+        "#,
+    )
+    .bind(user_id)
+    .bind(provider)
+    .bind(provider_user_id)
+    .bind(format!("{}@example.com", provider))
+    .bind(format!("{} User", provider))
+    .execute(pool)
+    .await
+    .expect("Failed to insert social account");
 }
