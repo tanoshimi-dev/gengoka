@@ -66,6 +66,22 @@ final class AuthService {
         saveAuth(response)
     }
     
+    func socialLogin(result: SocialAuthResult) async throws {
+        let request = SocialLoginRequest(
+            provider: result.provider.rawValue,
+            idToken: result.idToken,
+            accessToken: result.accessToken,
+            deviceInfo: "iOS"
+        )
+
+        let response: AuthResponse = try await APIClient.shared.request(
+            .socialLogin,
+            body: request
+        )
+
+        saveAuth(response)
+    }
+
     func logout() {
         clearAuth()
     }

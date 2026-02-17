@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
@@ -13,11 +14,12 @@ struct RegisterView: View {
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var isLoading = false
+    @State private var isSocialLoading = false
     @State private var errorMessage: String?
     @State private var showPassword = false
     @State private var showConfirmPassword = false
     @FocusState private var focusedField: Field?
-    
+
     let onRegisterSuccess: () -> Void
     let switchToLogin: () -> Void
     
@@ -303,18 +305,69 @@ struct RegisterView: View {
                 }
                 .padding(.horizontal, 24)
                 
+                // Social Login Section
+                VStack(spacing: 16) {
+                    HStack {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: 1)
+                        Text("または")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: 1)
+                    }
+                    .padding(.horizontal, 24)
+
+                    VStack(spacing: 12) {
+                        SocialLoginButton(
+                            title: "Googleで登録",
+                            iconName: "g.circle.fill",
+                            backgroundColor: .white,
+                            foregroundColor: AppColors.textPrimary,
+                            borderColor: Color.gray.opacity(0.3),
+                            isLoading: isSocialLoading
+                        ) {
+                            handleSocialLogin(provider: .google)
+                        }
+
+                        SocialLoginButton(
+                            title: "Appleで登録",
+                            iconName: "apple.logo",
+                            backgroundColor: .black,
+                            foregroundColor: .white,
+                            isLoading: isSocialLoading
+                        ) {
+                            handleSocialLogin(provider: .apple)
+                        }
+
+                        SocialLoginButton(
+                            title: "LINEで登録",
+                            iconName: "message.fill",
+                            backgroundColor: Color(hex: "#06C755"),
+                            foregroundColor: .white,
+                            isLoading: isSocialLoading
+                        ) {
+                            handleSocialLogin(provider: .line)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .disabled(isLoading || isSocialLoading)
+
                 // Login Link
                 VStack(spacing: 12) {
                     Rectangle()
                         .fill(Color.gray.opacity(0.2))
                         .frame(height: 1)
                         .padding(.horizontal, 24)
-                    
+
                     HStack {
                         Text("すでにアカウントをお持ちですか？")
                             .font(.subheadline)
                             .foregroundColor(AppColors.textSecondary)
-                        
+
                         Button {
                             switchToLogin()
                         } label: {
@@ -336,6 +389,48 @@ struct RegisterView: View {
         }
     }
     
+    // MARK: - Social Login
+
+    private func handleSocialLogin(provider: SocialAuthProvider) {
+        errorMessage = nil
+        focusedField = nil
+        isSocialLoading = true
+
+        Task {
+            do {
+                let result: SocialAuthResult
+                switch provider {
+                case .apple:
+                    let delegate = AppleSignInDelegate()
+                    result = try await delegate.signIn()
+                case .google:
+                    throw SocialAuthError.notConfigured("Google")
+                case .line:
+                    throw SocialAuthError.notConfigured("LINE")
+                }
+
+                try await AuthService.shared.socialLogin(result: result)
+                await MainActor.run {
+                    isSocialLoading = false
+                    onRegisterSuccess()
+                }
+            } catch let error as SocialAuthError where error.errorDescription == nil {
+                await MainActor.run { isSocialLoading = false }
+            } catch {
+                await MainActor.run {
+                    isSocialLoading = false
+                    if let socialError = error as? SocialAuthError {
+                        errorMessage = socialError.localizedDescription
+                    } else if let networkError = error as? NetworkError {
+                        errorMessage = networkError.localizedDescription
+                    } else {
+                        errorMessage = "ソーシャルログインに失敗しました"
+                    }
+                }
+            }
+        }
+    }
+
     private var isFormValid: Bool {
         !email.isEmpty && !username.isEmpty && !password.isEmpty && !confirmPassword.isEmpty
     }

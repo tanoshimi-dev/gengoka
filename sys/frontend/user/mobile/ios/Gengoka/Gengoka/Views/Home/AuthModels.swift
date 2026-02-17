@@ -71,6 +71,20 @@ struct AuthUser: Codable, Identifiable {
     }
 }
 
+struct SocialLoginRequest: Codable {
+    let provider: String
+    let idToken: String?
+    let accessToken: String?
+    let deviceInfo: String?
+
+    enum CodingKeys: String, CodingKey {
+        case provider
+        case idToken = "id_token"
+        case accessToken = "access_token"
+        case deviceInfo = "device_info"
+    }
+}
+
 struct RefreshTokenRequest: Codable {
     let refreshToken: String
     

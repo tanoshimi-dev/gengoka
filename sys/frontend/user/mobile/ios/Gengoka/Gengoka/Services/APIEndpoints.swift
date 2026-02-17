@@ -10,6 +10,7 @@ enum APIEndpoint {
     case login
     case register
     case refreshToken
+    case socialLogin
     
     // App endpoints
     case categories
@@ -36,6 +37,8 @@ enum APIEndpoint {
             return "/auth/register"
         case .refreshToken:
             return "/auth/refresh"
+        case .socialLogin:
+            return "/auth/social"
         case .categories:
             return "/categories"
         case .dailyChallenges:
@@ -73,7 +76,7 @@ enum APIEndpoint {
         switch self {
         case .categories, .dailyChallenges, .challenge, .challengeAnswer, .feed, .user, .currentUser, .userStats, .comments:
             return .get
-        case .login, .register, .refreshToken, .submitAnswer, .followUser, .likeAnswer, .addComment:
+        case .login, .register, .refreshToken, .socialLogin, .submitAnswer, .followUser, .likeAnswer, .addComment:
             return .post
         case .unfollowUser, .unlikeAnswer:
             return .delete
