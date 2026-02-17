@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "app.dev.gengoka"
+    namespace = "app.gengoka"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "app.dev.gengoka"
+        applicationId = "app.gengoka"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

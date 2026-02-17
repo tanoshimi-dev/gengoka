@@ -152,7 +152,7 @@ impl Config {
                 google_client_id_ios: env::var("GOOGLE_CLIENT_ID_IOS").unwrap_or_default(),
                 google_client_id_android: env::var("GOOGLE_CLIENT_ID_ANDROID").unwrap_or_default(),
                 apple_client_id: env::var("APPLE_CLIENT_ID")
-                    .unwrap_or_else(|_| "app.dev.gengoka".to_string()),
+                    .unwrap_or_else(|_| "app.gengoka".to_string()),
                 apple_team_id: env::var("APPLE_TEAM_ID").unwrap_or_default(),
                 line_channel_id: env::var("LINE_CHANNEL_ID").unwrap_or_default(),
                 line_channel_secret: env::var("LINE_CHANNEL_SECRET").unwrap_or_default(),

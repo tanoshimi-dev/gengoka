@@ -13,10 +13,10 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
--keep,includedescriptorclasses class app.dev.gengoka.**$$serializer { *; }
--keepclassmembers class app.dev.gengoka.** {
+-keep,includedescriptorclasses class app.gengoka.**$$serializer { *; }
+-keepclassmembers class app.gengoka.** {
     *** Companion;
 }
--keepclasseswithmembers class app.dev.gengoka.** {
+-keepclasseswithmembers class app.gengoka.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
