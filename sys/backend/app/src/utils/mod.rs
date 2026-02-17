@@ -192,3 +192,107 @@ pub fn normalize_pagination(page: Option<i64>, page_size: Option<i64>, default_s
     let offset = (page - 1) * page_size;
     (page, page_size, offset)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::AuthConfig;
+
+    fn test_auth_config() -> AuthConfig {
+        AuthConfig {
+            jwt_secret: "test-secret-for-unit-tests".to_string(),
+            access_token_ttl_minutes: 30,
+            refresh_token_ttl_days: 90,
+        }
+    }
+
+    #[test]
+    fn test_hash_and_verify_password() {
+        let password = "secure-password-123";
+        let hash = hash_password(password).unwrap();
+
+        assert!(verify_password(password, &hash));
+        assert!(!verify_password("wrong-password", &hash));
+    }
+
+    #[test]
+    fn test_generate_access_token_and_decode() {
+        let config = test_auth_config();
+        let user_id = uuid::Uuid::new_v4();
+
+        let token = generate_access_token(&user_id, &config).unwrap();
+        let claims = decode_access_token(&token, &config).unwrap();
+
+        assert_eq!(claims.sub, user_id.to_string());
+    }
+
+    #[test]
+    fn test_decode_expired_token() {
+        let config = AuthConfig {
+            jwt_secret: "test-secret-for-unit-tests".to_string(),
+            access_token_ttl_minutes: 0,
+            refresh_token_ttl_days: 90,
+        };
+        let user_id = uuid::Uuid::new_v4();
+
+        let now = chrono::Utc::now();
+        let exp = now - chrono::Duration::hours(1);
+        let claims = crate::models::Claims {
+            sub: user_id.to_string(),
+            exp: exp.timestamp() as usize,
+            iat: (now - chrono::Duration::hours(2)).timestamp() as usize,
+        };
+        let token = jsonwebtoken::encode(
+            &jsonwebtoken::Header::default(),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(config.jwt_secret.as_bytes()),
+        )
+        .unwrap();
+
+        let result = decode_access_token(&token, &config);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_refresh_token_uniqueness() {
+        let token1 = generate_refresh_token();
+        let token2 = generate_refresh_token();
+
+        assert_ne!(token1, token2);
+    }
+
+    #[test]
+    fn test_hash_refresh_token_deterministic() {
+        let token = "some-refresh-token";
+        let hash1 = hash_refresh_token(token);
+        let hash2 = hash_refresh_token(token);
+
+        assert_eq!(hash1, hash2);
+
+        let different_hash = hash_refresh_token("different-token");
+        assert_ne!(hash1, different_hash);
+    }
+
+    #[test]
+    fn test_normalize_pagination() {
+        // Default values
+        let (page, page_size, offset) = normalize_pagination(None, None, 20, 100);
+        assert_eq!((page, page_size, offset), (1, 20, 0));
+
+        // Explicit page and size
+        let (page, page_size, offset) = normalize_pagination(Some(3), Some(10), 20, 100);
+        assert_eq!((page, page_size, offset), (3, 10, 20));
+
+        // Page size clamped to max
+        let (page, page_size, offset) = normalize_pagination(Some(1), Some(200), 20, 100);
+        assert_eq!((page, page_size, offset), (1, 100, 0));
+
+        // Negative page clamped to 1
+        let (page, page_size, offset) = normalize_pagination(Some(-5), Some(10), 20, 100);
+        assert_eq!((page, page_size, offset), (1, 10, 0));
+
+        // Zero page size clamped to 1
+        let (page, page_size, offset) = normalize_pagination(Some(1), Some(0), 20, 100);
+        assert_eq!((page, page_size, offset), (1, 1, 0));
+    }
+}

@@ -66,6 +66,11 @@ hex = "0.4"
 totp-rs = { version = "5", features = ["otpauth", "qr", "gen_secret"] }
 rand = "0.8"
 
+[dev-dependencies]
+wiremock = "0.6"
+rsa = "0.9"
+base64 = "0.22"
+
 [profile.release]
 lto = true
 codegen-units = 1

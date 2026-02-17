@@ -21,6 +21,10 @@ pub struct SocialAuthConfig {
     pub apple_team_id: String,
     pub line_channel_id: String,
     pub line_channel_secret: String,
+    pub google_jwks_url: String,
+    pub apple_jwks_url: String,
+    pub line_verify_url: String,
+    pub line_profile_url: String,
 }
 
 #[derive(Debug, Clone)]
@@ -158,6 +162,14 @@ impl Config {
                 apple_team_id: env::var("APPLE_TEAM_ID").unwrap_or_default(),
                 line_channel_id: env::var("LINE_CHANNEL_ID").unwrap_or_default(),
                 line_channel_secret: env::var("LINE_CHANNEL_SECRET").unwrap_or_default(),
+                google_jwks_url: env::var("GOOGLE_JWKS_URL")
+                    .unwrap_or_else(|_| "https://www.googleapis.com/oauth2/v3/certs".to_string()),
+                apple_jwks_url: env::var("APPLE_JWKS_URL")
+                    .unwrap_or_else(|_| "https://appleid.apple.com/auth/keys".to_string()),
+                line_verify_url: env::var("LINE_VERIFY_URL")
+                    .unwrap_or_else(|_| "https://api.line.me/oauth2/v2.1/verify".to_string()),
+                line_profile_url: env::var("LINE_PROFILE_URL")
+                    .unwrap_or_else(|_| "https://api.line.me/v2/profile".to_string()),
             },
             admin: AdminConfig {
                 session_secret: env::var("ADMIN_SESSION_SECRET")

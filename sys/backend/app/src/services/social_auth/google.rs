@@ -24,8 +24,6 @@ struct GoogleClaims {
     aud: String,
 }
 
-const GOOGLE_JWKS_URL: &str = "https://www.googleapis.com/oauth2/v3/certs";
-
 /// Verify a Google ID token and extract user info.
 ///
 /// Flow:
@@ -41,7 +39,7 @@ pub async fn verify_google_token(
     // Fetch Google's public keys
     let client = reqwest::Client::new();
     let jwks: GoogleJwks = client
-        .get(GOOGLE_JWKS_URL)
+        .get(&config.google_jwks_url)
         .send()
         .await
         .map_err(|e| format!("Failed to fetch Google JWKS: {}", e))?
@@ -88,4 +86,208 @@ pub async fn verify_google_token(
         name: claims.name,
         avatar: claims.picture,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    const TEST_KID: &str = "test-google-key-1";
+
+    fn generate_test_keys() -> (Vec<u8>, serde_json::Value) {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+        use rsa::pkcs8::EncodePrivateKey;
+        use rsa::traits::PublicKeyParts;
+        use rsa::RsaPrivateKey;
+
+        let mut rng = rand::thread_rng();
+        let private_key = RsaPrivateKey::new(&mut rng, 2048).unwrap();
+
+        let pem = private_key
+            .to_pkcs8_pem(rsa::pkcs8::LineEnding::LF)
+            .unwrap();
+
+        let n = URL_SAFE_NO_PAD.encode(private_key.n().to_bytes_be());
+        let e = URL_SAFE_NO_PAD.encode(private_key.e().to_bytes_be());
+
+        let jwks = serde_json::json!({
+            "keys": [{
+                "kid": TEST_KID,
+                "kty": "RSA",
+                "n": n,
+                "e": e,
+                "alg": "RS256",
+                "use": "sig"
+            }]
+        });
+
+        (pem.as_bytes().to_vec(), jwks)
+    }
+
+    fn create_test_jwt(claims: &impl serde::Serialize, kid: &str, pem: &[u8]) -> String {
+        let mut header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
+        header.kid = Some(kid.to_string());
+        jsonwebtoken::encode(
+            &header,
+            claims,
+            &jsonwebtoken::EncodingKey::from_rsa_pem(pem).unwrap(),
+        )
+        .unwrap()
+    }
+
+    fn test_config(jwks_url: &str) -> SocialAuthConfig {
+        SocialAuthConfig {
+            google_client_id_web: "test-web-client-id".to_string(),
+            google_client_id_ios: "test-ios-client-id".to_string(),
+            google_client_id_android: "test-android-client-id".to_string(),
+            apple_client_id: String::new(),
+            apple_team_id: String::new(),
+            line_channel_id: String::new(),
+            line_channel_secret: String::new(),
+            google_jwks_url: jwks_url.to_string(),
+            apple_jwks_url: String::new(),
+            line_verify_url: String::new(),
+            line_profile_url: String::new(),
+        }
+    }
+
+    #[derive(serde::Serialize)]
+    struct TestGoogleClaims {
+        sub: String,
+        email: Option<String>,
+        email_verified: Option<bool>,
+        name: Option<String>,
+        picture: Option<String>,
+        aud: String,
+        iss: String,
+        exp: usize,
+        iat: usize,
+    }
+
+    fn valid_claims(aud: &str) -> TestGoogleClaims {
+        let now = chrono::Utc::now();
+        TestGoogleClaims {
+            sub: "google-user-123".to_string(),
+            email: Some("test@gmail.com".to_string()),
+            email_verified: Some(true),
+            name: Some("Test User".to_string()),
+            picture: Some("https://example.com/photo.jpg".to_string()),
+            aud: aud.to_string(),
+            iss: "accounts.google.com".to_string(),
+            exp: (now + chrono::Duration::hours(1)).timestamp() as usize,
+            iat: now.timestamp() as usize,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_verify_google_token_valid() {
+        let (pem, jwks) = generate_test_keys();
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/jwks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&jwks))
+            .mount(&mock_server)
+            .await;
+
+        let config = test_config(&format!("{}/jwks", mock_server.uri()));
+        let claims = valid_claims("test-web-client-id");
+        let token = create_test_jwt(&claims, TEST_KID, &pem);
+
+        let result = verify_google_token(&token, &config).await;
+        assert!(result.is_ok());
+
+        let info = result.unwrap();
+        assert_eq!(info.provider, "google");
+        assert_eq!(info.provider_user_id, "google-user-123");
+        assert_eq!(info.email, Some("test@gmail.com".to_string()));
+        assert_eq!(info.name, Some("Test User".to_string()));
+        assert_eq!(
+            info.avatar,
+            Some("https://example.com/photo.jpg".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_verify_google_token_invalid_audience() {
+        let (pem, jwks) = generate_test_keys();
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/jwks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&jwks))
+            .mount(&mock_server)
+            .await;
+
+        let config = test_config(&format!("{}/jwks", mock_server.uri()));
+        let claims = valid_claims("wrong-audience");
+        let token = create_test_jwt(&claims, TEST_KID, &pem);
+
+        let result = verify_google_token(&token, &config).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Token verification failed"));
+    }
+
+    #[tokio::test]
+    async fn test_verify_google_token_expired() {
+        let (pem, jwks) = generate_test_keys();
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/jwks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&jwks))
+            .mount(&mock_server)
+            .await;
+
+        let config = test_config(&format!("{}/jwks", mock_server.uri()));
+        let now = chrono::Utc::now();
+        let claims = TestGoogleClaims {
+            exp: (now - chrono::Duration::hours(1)).timestamp() as usize,
+            iat: (now - chrono::Duration::hours(2)).timestamp() as usize,
+            ..valid_claims("test-web-client-id")
+        };
+        let token = create_test_jwt(&claims, TEST_KID, &pem);
+
+        let result = verify_google_token(&token, &config).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Token verification failed"));
+    }
+
+    #[tokio::test]
+    async fn test_verify_google_token_wrong_kid() {
+        let (pem, jwks) = generate_test_keys();
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/jwks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&jwks))
+            .mount(&mock_server)
+            .await;
+
+        let config = test_config(&format!("{}/jwks", mock_server.uri()));
+        let claims = valid_claims("test-web-client-id");
+        let token = create_test_jwt(&claims, "wrong-kid", &pem);
+
+        let result = verify_google_token(&token, &config).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "No matching Google key found");
+    }
+
+    #[tokio::test]
+    async fn test_verify_google_token_malformed() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/jwks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&serde_json::json!({"keys": []})))
+            .mount(&mock_server)
+            .await;
+
+        let config = test_config(&format!("{}/jwks", mock_server.uri()));
+
+        let result = verify_google_token("not-a-valid-jwt", &config).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid token header"));
+    }
 }
