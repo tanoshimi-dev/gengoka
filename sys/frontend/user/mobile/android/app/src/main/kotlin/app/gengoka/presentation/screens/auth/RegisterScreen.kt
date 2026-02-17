@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -68,7 +70,7 @@ fun RegisterScreen(
     isSocialLoading: Boolean,
     error: String?,
     onRegister: (email: String, password: String, name: String) -> Unit,
-    onSocialLogin: (provider: String) -> Unit,
+    onSocialLogin: (provider: String, context: Context) -> Unit,
     onSwitchToLogin: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
@@ -78,6 +80,7 @@ fun RegisterScreen(
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showConfirmPassword by rememberSaveable { mutableStateOf(false) }
     var localError by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
     val isFormValid = email.isNotBlank() && name.isNotBlank() &&
@@ -412,7 +415,7 @@ fun RegisterScreen(
                 contentColor = TextDarkPrimary,
                 borderColor = Color.Gray.copy(alpha = 0.3f),
                 isLoading = isSocialLoading,
-                onClick = { onSocialLogin("google") }
+                onClick = { onSocialLogin("google", context) }
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -423,7 +426,7 @@ fun RegisterScreen(
                 backgroundColor = Color(0xFF06C755),
                 contentColor = Color.White,
                 isLoading = isSocialLoading,
-                onClick = { onSocialLogin("line") }
+                onClick = { onSocialLogin("line", context) }
             )
 
             Spacer(modifier = Modifier.height(24.dp))

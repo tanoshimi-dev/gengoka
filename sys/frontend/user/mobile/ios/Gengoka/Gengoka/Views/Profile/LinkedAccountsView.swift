@@ -51,11 +51,9 @@ final class LinkedAccountsViewModel {
             case "apple":
                 authResult = try await appleDelegate.signIn()
             case "google":
-                // Google SDK would be called here; placeholder for now
-                throw SocialAuthError.notConfigured("Google")
+                authResult = try await GoogleSignInService.signIn()
             case "line":
-                // LINE SDK would be called here; placeholder for now
-                throw SocialAuthError.notConfigured("LINE")
+                authResult = try await LineSignInService.signIn()
             default:
                 throw SocialAuthError.notConfigured(provider)
             }

@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "app.gengoka"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "app.gengoka"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
 
@@ -91,6 +91,14 @@ dependencies {
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // Credential Manager (Google Sign-In)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    // LINE SDK
+    implementation("com.linecorp.linesdk:linesdk:5.11.0")
 
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")

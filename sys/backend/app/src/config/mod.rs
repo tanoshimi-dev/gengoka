@@ -14,6 +14,7 @@ pub struct Config {
 
 #[derive(Debug, Clone)]
 pub struct SocialAuthConfig {
+    pub google_client_id_web: String,
     pub google_client_id_ios: String,
     pub google_client_id_android: String,
     pub apple_client_id: String,
@@ -149,6 +150,7 @@ impl Config {
                     .unwrap_or(90),
             },
             social_auth: SocialAuthConfig {
+                google_client_id_web: env::var("GOOGLE_CLIENT_ID_WEB").unwrap_or_default(),
                 google_client_id_ios: env::var("GOOGLE_CLIENT_ID_IOS").unwrap_or_default(),
                 google_client_id_android: env::var("GOOGLE_CLIENT_ID_ANDROID").unwrap_or_default(),
                 apple_client_id: env::var("APPLE_CLIENT_ID")

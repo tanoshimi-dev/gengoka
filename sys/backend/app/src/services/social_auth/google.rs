@@ -70,6 +70,7 @@ pub async fn verify_google_token(
     // Validate and decode
     let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::RS256);
     validation.set_audience(&[
+        &config.google_client_id_web,
         &config.google_client_id_ios,
         &config.google_client_id_android,
     ]);

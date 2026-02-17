@@ -280,11 +280,9 @@ struct LoginView: View {
                     let delegate = AppleSignInDelegate()
                     result = try await delegate.signIn()
                 case .google:
-                    // TODO: Integrate Google Sign-In SDK (requires SPM package)
-                    throw SocialAuthError.notConfigured("Google")
+                    result = try await GoogleSignInService.signIn()
                 case .line:
-                    // TODO: Integrate LINE SDK (requires SPM package)
-                    throw SocialAuthError.notConfigured("LINE")
+                    result = try await LineSignInService.signIn()
                 }
 
                 try await AuthService.shared.socialLogin(result: result)

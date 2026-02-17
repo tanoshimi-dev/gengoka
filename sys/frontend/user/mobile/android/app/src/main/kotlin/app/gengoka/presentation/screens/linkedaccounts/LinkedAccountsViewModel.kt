@@ -1,7 +1,11 @@
 package app.gengoka.presentation.screens.linkedaccounts
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.gengoka.core.auth.GoogleAuthHelper
+import app.gengoka.core.auth.LineAuthHelper
 import app.gengoka.core.util.Resource
 import app.gengoka.domain.model.LinkedSocialAccount
 import app.gengoka.domain.repository.AuthRepository
@@ -48,23 +52,66 @@ class LinkedAccountsViewModel @Inject constructor(
         }
     }
 
-    fun linkAccount(provider: String, idToken: String? = null, accessToken: String? = null) {
+    fun linkAccount(provider: String, context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLinking = true, error = null) }
-            when (val result = authRepository.linkAccount(provider, idToken, accessToken)) {
-                is Resource.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLinking = false,
-                            accounts = it.accounts + result.data
-                        )
+            try {
+                val idToken: String?
+                val accessToken: String?
+                when (provider) {
+                    "google" -> {
+                        idToken = GoogleAuthHelper.signIn(context)
+                        accessToken = null
+                    }
+                    else -> {
+                        idToken = null
+                        accessToken = null
                     }
                 }
-                is Resource.Error -> {
-                    _uiState.update { it.copy(isLinking = false, error = result.message) }
+                completeLinkAccount(provider, idToken, accessToken)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLinking = false, error = e.message ?: "アカウント連携に失敗しました")
                 }
-                is Resource.Loading -> {}
             }
+        }
+    }
+
+    fun handleLineLoginResult(data: Intent?) {
+        viewModelScope.launch {
+            try {
+                val accessToken = LineAuthHelper.getAccessTokenFromResult(data)
+                completeLinkAccount("line", null, accessToken)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLinking = false, error = e.message ?: "LINE連携に失敗しました")
+                }
+            }
+        }
+    }
+
+    fun cancelLineLogin() {
+        _uiState.update { it.copy(isLinking = false) }
+    }
+
+    fun setLinking(linking: Boolean) {
+        _uiState.update { it.copy(isLinking = linking, error = null) }
+    }
+
+    private suspend fun completeLinkAccount(provider: String, idToken: String?, accessToken: String?) {
+        when (val result = authRepository.linkAccount(provider, idToken, accessToken)) {
+            is Resource.Success -> {
+                _uiState.update {
+                    it.copy(
+                        isLinking = false,
+                        accounts = it.accounts + result.data
+                    )
+                }
+            }
+            is Resource.Error -> {
+                _uiState.update { it.copy(isLinking = false, error = result.message) }
+            }
+            is Resource.Loading -> {}
         }
     }
 

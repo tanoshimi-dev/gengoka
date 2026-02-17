@@ -35,13 +35,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.BorderStroke
+import app.gengoka.core.auth.LineAuthHelper
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -79,6 +84,17 @@ fun LinkedAccountsScreen(
     viewModel: LinkedAccountsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    val lineLoginLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.handleLineLoginResult(result.data)
+        } else {
+            viewModel.cancelLineLogin()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -162,7 +178,15 @@ fun LinkedAccountsScreen(
                                     provider = provider,
                                     linked = linked,
                                     isLinking = uiState.isLinking,
-                                    onLink = { viewModel.linkAccount(provider.id) },
+                                    onLink = {
+                                    when (provider.id) {
+                                        "line" -> {
+                                            viewModel.setLinking(true)
+                                            lineLoginLauncher.launch(LineAuthHelper.getLoginIntent(context))
+                                        }
+                                        else -> viewModel.linkAccount(provider.id, context)
+                                    }
+                                },
                                     onUnlink = { viewModel.showUnlinkDialog(provider.id) }
                                 )
                                 if (index < providers.lastIndex) {

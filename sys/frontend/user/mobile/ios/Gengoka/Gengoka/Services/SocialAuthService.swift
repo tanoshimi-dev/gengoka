@@ -5,6 +5,9 @@
 
 import Foundation
 import AuthenticationServices
+import GoogleSignIn
+import LineSDK
+import UIKit
 
 enum SocialAuthProvider: String {
     case google
@@ -16,6 +19,79 @@ struct SocialAuthResult {
     let provider: SocialAuthProvider
     let idToken: String?
     let accessToken: String?
+}
+
+// MARK: - Google Sign-In
+
+class GoogleSignInService {
+    static func signIn() async throws -> SocialAuthResult {
+        guard let rootViewController = await UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .flatMap({ $0.windows })
+            .first(where: { $0.isKeyWindow })?.rootViewController else {
+            throw SocialAuthError.providerError("UIViewControllerが見つかりません")
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            Task { @MainActor in
+                GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
+                    if let error = error as NSError?,
+                       error.domain == "com.google.GIDSignIn",
+                       error.code == -5 { // GIDSignInErrorCodeCanceled
+                        continuation.resume(throwing: SocialAuthError.cancelled)
+                        return
+                    }
+
+                    if let error = error {
+                        continuation.resume(throwing: SocialAuthError.providerError(error.localizedDescription))
+                        return
+                    }
+
+                    guard let user = result?.user,
+                          let idToken = user.idToken?.tokenString else {
+                        continuation.resume(throwing: SocialAuthError.invalidCredential)
+                        return
+                    }
+
+                    let accessToken = user.accessToken.tokenString
+                    let authResult = SocialAuthResult(
+                        provider: .google,
+                        idToken: idToken,
+                        accessToken: accessToken
+                    )
+                    continuation.resume(returning: authResult)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - LINE Sign-In
+
+class LineSignInService {
+    static func signIn() async throws -> SocialAuthResult {
+        return try await withCheckedThrowingContinuation { continuation in
+            LoginManager.shared.login(permissions: [.profile], in: nil) { result in
+                switch result {
+                case .success(let loginResult):
+                    let token = loginResult.accessToken.value
+                    let authResult = SocialAuthResult(
+                        provider: .line,
+                        idToken: nil,
+                        accessToken: token
+                    )
+                    continuation.resume(returning: authResult)
+                case .failure(let error):
+                    if error.errorCode == 3003 {
+                        // User cancelled
+                        continuation.resume(throwing: SocialAuthError.cancelled)
+                    } else {
+                        continuation.resume(throwing: SocialAuthError.providerError(error.localizedDescription))
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Apple Sign-In Delegate

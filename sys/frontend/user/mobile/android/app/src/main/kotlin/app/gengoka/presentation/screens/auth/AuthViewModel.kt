@@ -1,7 +1,11 @@
 package app.gengoka.presentation.screens.auth
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.gengoka.core.auth.GoogleAuthHelper
+import app.gengoka.core.auth.LineAuthHelper
 import app.gengoka.core.util.Resource
 import app.gengoka.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,18 +63,61 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun socialLogin(provider: String, idToken: String? = null, accessToken: String? = null) {
+    fun socialLogin(provider: String, context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSocialLoading = true, error = null) }
-            when (val result = authRepository.socialLogin(provider, idToken, accessToken)) {
-                is Resource.Success -> {
-                    _uiState.update { it.copy(isSocialLoading = false) }
+            try {
+                val idToken: String?
+                val accessToken: String?
+                when (provider) {
+                    "google" -> {
+                        idToken = GoogleAuthHelper.signIn(context)
+                        accessToken = null
+                    }
+                    else -> {
+                        idToken = null
+                        accessToken = null
+                    }
                 }
-                is Resource.Error -> {
-                    _uiState.update { it.copy(isSocialLoading = false, error = result.message) }
+                completeSocialLogin(provider, idToken, accessToken)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isSocialLoading = false, error = e.message ?: "ソーシャルログインに失敗しました")
                 }
-                is Resource.Loading -> {}
             }
+        }
+    }
+
+    fun handleLineLoginResult(data: Intent?) {
+        viewModelScope.launch {
+            try {
+                val accessToken = LineAuthHelper.getAccessTokenFromResult(data)
+                completeSocialLogin("line", null, accessToken)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isSocialLoading = false, error = e.message ?: "LINEログインに失敗しました")
+                }
+            }
+        }
+    }
+
+    fun cancelLineLogin() {
+        _uiState.update { it.copy(isSocialLoading = false) }
+    }
+
+    fun setSocialLoading(loading: Boolean) {
+        _uiState.update { it.copy(isSocialLoading = loading, error = null) }
+    }
+
+    private suspend fun completeSocialLogin(provider: String, idToken: String?, accessToken: String?) {
+        when (val result = authRepository.socialLogin(provider, idToken, accessToken)) {
+            is Resource.Success -> {
+                _uiState.update { it.copy(isSocialLoading = false) }
+            }
+            is Resource.Error -> {
+                _uiState.update { it.copy(isSocialLoading = false, error = result.message) }
+            }
+            is Resource.Loading -> {}
         }
     }
 

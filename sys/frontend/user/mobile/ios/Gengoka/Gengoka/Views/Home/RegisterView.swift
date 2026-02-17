@@ -404,9 +404,9 @@ struct RegisterView: View {
                     let delegate = AppleSignInDelegate()
                     result = try await delegate.signIn()
                 case .google:
-                    throw SocialAuthError.notConfigured("Google")
+                    result = try await GoogleSignInService.signIn()
                 case .line:
-                    throw SocialAuthError.notConfigured("LINE")
+                    result = try await LineSignInService.signIn()
                 }
 
                 try await AuthService.shared.socialLogin(result: result)

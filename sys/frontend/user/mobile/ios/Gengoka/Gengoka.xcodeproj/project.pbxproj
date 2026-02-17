@@ -6,13 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5AD02FA12F449DF4008581DE /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 5AD02FA02F449DF4008581DE /* GoogleSignIn */; };
+		5AD02FA32F449DF4008581DE /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 5AD02FA22F449DF4008581DE /* GoogleSignInSwift */; };
+		5AD02FA52F44B000008581DE /* LineSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 5AD02FA72F44B000008581DE /* LineSDK */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		5ADA8BD92F2C5C0D004B3CB3 /* Gengoka.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gengoka.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5AD02FA42F44A000008581DE /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5ADA8BD82F2C5C0D004B3CB3 /* Gengoka */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5ADA8BDB2F2C5C0D004B3CB3 /* Gengoka */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5AD02FA42F44A000008581DE /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 			path = Gengoka;
 			sourceTree = "<group>";
 		};
@@ -23,6 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5AD02FA12F449DF4008581DE /* GoogleSignIn in Frameworks */,
+				5AD02FA32F449DF4008581DE /* GoogleSignInSwift in Frameworks */,
+				5AD02FA52F44B000008581DE /* LineSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +87,9 @@
 			);
 			name = Gengoka;
 			packageProductDependencies = (
+				5AD02FA02F449DF4008581DE /* GoogleSignIn */,
+				5AD02FA22F449DF4008581DE /* GoogleSignInSwift */,
+				5AD02FA72F44B000008581DE /* LineSDK */,
 			);
 			productName = Gengoka;
 			productReference = 5ADA8BD92F2C5C0D004B3CB3 /* Gengoka.app */;
@@ -94,6 +119,10 @@
 			);
 			mainGroup = 5ADA8BD02F2C5C0D004B3CB3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5AD02F9F2F449DF4008581DE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				5AD02FA62F44B000008581DE /* XCRemoteSwiftPackageReference "line-sdk-ios-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5ADA8BDA2F2C5C0D004B3CB3 /* Products */;
 			projectDirPath = "";
@@ -251,11 +280,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Gengoka/Gengoka.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = K26G6YUY99;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Gengoka/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -283,11 +314,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Gengoka/Gengoka.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = K26G6YUY99;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Gengoka/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -332,6 +365,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5AD02F9F2F449DF4008581DE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
+		5AD02FA62F44B000008581DE /* XCRemoteSwiftPackageReference "line-sdk-ios-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/line/line-sdk-ios-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5AD02FA02F449DF4008581DE /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5AD02F9F2F449DF4008581DE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		5AD02FA22F449DF4008581DE /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5AD02F9F2F449DF4008581DE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		5AD02FA72F44B000008581DE /* LineSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5AD02FA62F44B000008581DE /* XCRemoteSwiftPackageReference "line-sdk-ios-swift" */;
+			productName = LineSDK;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5ADA8BD12F2C5C0D004B3CB3 /* Project object */;
 }
