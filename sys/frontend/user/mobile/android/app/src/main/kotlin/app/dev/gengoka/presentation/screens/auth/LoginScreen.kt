@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.dev.gengoka.presentation.components.GradientButton
+import app.dev.gengoka.presentation.components.SocialLoginButton
 import app.dev.gengoka.presentation.theme.BackgroundGradientEnd
 import app.dev.gengoka.presentation.theme.BackgroundGradientStart
 import app.dev.gengoka.presentation.theme.BackgroundLightGradientEnd
@@ -63,8 +64,10 @@ import app.dev.gengoka.presentation.theme.TextTertiary
 @Composable
 fun LoginScreen(
     isLoading: Boolean,
+    isSocialLoading: Boolean,
     error: String?,
     onLogin: (email: String, password: String) -> Unit,
+    onSocialLogin: (provider: String) -> Unit,
     onSwitchToRegister: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
@@ -263,6 +266,53 @@ fun LoginScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            // Social Login Divider
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.Gray.copy(alpha = 0.3f)
+                )
+                Text(
+                    text = "または",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.Gray.copy(alpha = 0.3f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Social Login Buttons
+            SocialLoginButton(
+                title = "Googleでログイン",
+                icon = Icons.Filled.Email,
+                backgroundColor = Color.White,
+                contentColor = TextDarkPrimary,
+                borderColor = Color.Gray.copy(alpha = 0.3f),
+                isLoading = isSocialLoading,
+                onClick = { onSocialLogin("google") }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SocialLoginButton(
+                title = "LINEでログイン",
+                icon = Icons.Filled.Email,
+                backgroundColor = Color(0xFF06C755),
+                contentColor = Color.White,
+                isLoading = isSocialLoading,
+                onClick = { onSocialLogin("line") }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Divider
             HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))

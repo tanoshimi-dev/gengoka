@@ -43,17 +43,21 @@ fun NavGraph(
                 if (isLogin) {
                     LoginScreen(
                         isLoading = uiState.isLoading,
+                        isSocialLoading = uiState.isSocialLoading,
                         error = uiState.error,
                         onLogin = { email, password -> viewModel.login(email, password) },
+                        onSocialLogin = { provider -> viewModel.socialLogin(provider) },
                         onSwitchToRegister = { viewModel.toggleMode() }
                     )
                 } else {
                     RegisterScreen(
                         isLoading = uiState.isLoading,
+                        isSocialLoading = uiState.isSocialLoading,
                         error = uiState.error,
                         onRegister = { email, password, name ->
                             viewModel.register(email, password, name)
                         },
+                        onSocialLogin = { provider -> viewModel.socialLogin(provider) },
                         onSwitchToLogin = { viewModel.toggleMode() }
                     )
                 }

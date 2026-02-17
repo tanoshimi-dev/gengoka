@@ -8,6 +8,7 @@ import app.dev.gengoka.data.dto.LoginRequestDto
 import app.dev.gengoka.data.dto.LogoutRequestDto
 import app.dev.gengoka.data.dto.RefreshRequestDto
 import app.dev.gengoka.data.dto.RegisterRequestDto
+import app.dev.gengoka.data.dto.SocialLoginRequestDto
 import app.dev.gengoka.domain.repository.AuthRepository
 import javax.inject.Inject
 
@@ -27,6 +28,24 @@ class AuthRepositoryImpl @Inject constructor(
         return safeApiCall {
             val response = api.register(
                 RegisterRequestDto(email = email, password = password, name = name)
+            )
+            tokenManager.saveTokens(response.data)
+        }
+    }
+
+    override suspend fun socialLogin(
+        provider: String,
+        idToken: String?,
+        accessToken: String?
+    ): Resource<Unit> {
+        return safeApiCall {
+            val response = api.socialLogin(
+                SocialLoginRequestDto(
+                    provider = provider,
+                    idToken = idToken,
+                    accessToken = accessToken,
+                    deviceInfo = "Android"
+                )
             )
             tokenManager.saveTokens(response.data)
         }

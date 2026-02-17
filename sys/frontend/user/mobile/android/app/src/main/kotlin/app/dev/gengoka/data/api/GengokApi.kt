@@ -15,6 +15,9 @@ interface GengokApi {
     @POST("auth/refresh")
     suspend fun refreshToken(@Body request: RefreshRequestDto): ApiResponse<AuthTokensDto>
 
+    @POST("auth/social")
+    suspend fun socialLogin(@Body request: SocialLoginRequestDto): ApiResponse<AuthTokensDto>
+
     @POST("auth/logout")
     suspend fun logout(@Body request: LogoutRequestDto): ApiResponse<Unit?>
 

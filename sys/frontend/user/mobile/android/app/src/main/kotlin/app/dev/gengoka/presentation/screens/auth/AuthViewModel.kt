@@ -14,6 +14,7 @@ import javax.inject.Inject
 
 data class AuthUiState(
     val isLoading: Boolean = false,
+    val isSocialLoading: Boolean = false,
     val error: String? = null,
     val isLoginMode: Boolean = true
 )
@@ -52,6 +53,21 @@ class AuthViewModel @Inject constructor(
                 }
                 is Resource.Error -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
+                }
+                is Resource.Loading -> {}
+            }
+        }
+    }
+
+    fun socialLogin(provider: String, idToken: String? = null, accessToken: String? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSocialLoading = true, error = null) }
+            when (val result = authRepository.socialLogin(provider, idToken, accessToken)) {
+                is Resource.Success -> {
+                    _uiState.update { it.copy(isSocialLoading = false) }
+                }
+                is Resource.Error -> {
+                    _uiState.update { it.copy(isSocialLoading = false, error = result.message) }
                 }
                 is Resource.Loading -> {}
             }
