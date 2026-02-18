@@ -12,12 +12,23 @@
 		5AD02FA52F44B000008581DE /* LineSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 5AD02FA72F44B000008581DE /* LineSDK */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		5AD871E62F45F2A600DFF894 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5ADA8BD12F2C5C0D004B3CB3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5ADA8BD82F2C5C0D004B3CB3;
+			remoteInfo = Gengoka;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		5AD871E22F45F2A600DFF894 /* GengokaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GengokaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5ADA8BD92F2C5C0D004B3CB3 /* Gengoka.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gengoka.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		5AD02FA42F44A000008581DE /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		5AD02FA42F44A000008581DE /* Exceptions for "Gengoka" folder in "Gengoka" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -27,10 +38,15 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		5AD871E32F45F2A600DFF894 /* GengokaTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GengokaTests;
+			sourceTree = "<group>";
+		};
 		5ADA8BDB2F2C5C0D004B3CB3 /* Gengoka */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				5AD02FA42F44A000008581DE /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				5AD02FA42F44A000008581DE /* Exceptions for "Gengoka" folder in "Gengoka" target */,
 			);
 			path = Gengoka;
 			sourceTree = "<group>";
@@ -38,6 +54,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5AD871DF2F45F2A600DFF894 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5ADA8BD62F2C5C0D004B3CB3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -55,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				5ADA8BDB2F2C5C0D004B3CB3 /* Gengoka */,
+				5AD871E32F45F2A600DFF894 /* GengokaTests */,
 				5ADA8BDA2F2C5C0D004B3CB3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				5ADA8BD92F2C5C0D004B3CB3 /* Gengoka.app */,
+				5AD871E22F45F2A600DFF894 /* GengokaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5AD871E12F45F2A600DFF894 /* GengokaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5AD871EA2F45F2A600DFF894 /* Build configuration list for PBXNativeTarget "GengokaTests" */;
+			buildPhases = (
+				5AD871DE2F45F2A600DFF894 /* Sources */,
+				5AD871DF2F45F2A600DFF894 /* Frameworks */,
+				5AD871E02F45F2A600DFF894 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5AD871E72F45F2A600DFF894 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5AD871E32F45F2A600DFF894 /* GengokaTests */,
+			);
+			name = GengokaTests;
+			packageProductDependencies = (
+			);
+			productName = GengokaTests;
+			productReference = 5AD871E22F45F2A600DFF894 /* GengokaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		5ADA8BD82F2C5C0D004B3CB3 /* Gengoka */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5ADA8BE42F2C5C0E004B3CB3 /* Build configuration list for PBXNativeTarget "Gengoka" */;
@@ -105,6 +153,10 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					5AD871E12F45F2A600DFF894 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 5ADA8BD82F2C5C0D004B3CB3;
+					};
 					5ADA8BD82F2C5C0D004B3CB3 = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -129,11 +181,19 @@
 			projectRoot = "";
 			targets = (
 				5ADA8BD82F2C5C0D004B3CB3 /* Gengoka */,
+				5AD871E12F45F2A600DFF894 /* GengokaTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5AD871E02F45F2A600DFF894 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5ADA8BD72F2C5C0D004B3CB3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -144,6 +204,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5AD871DE2F45F2A600DFF894 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5ADA8BD52F2C5C0D004B3CB3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -153,7 +220,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5AD871E72F45F2A600DFF894 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5ADA8BD82F2C5C0D004B3CB3 /* Gengoka */;
+			targetProxy = 5AD871E62F45F2A600DFF894 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		5AD871E82F45F2A600DFF894 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = K26G6YUY99;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.gengokaW.GengokaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gengoka.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Gengoka";
+			};
+			name = Debug;
+		};
+		5AD871E92F45F2A600DFF894 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = K26G6YUY99;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.gengokaW.GengokaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gengoka.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Gengoka";
+			};
+			name = Release;
+		};
 		5ADA8BE22F2C5C0E004B3CB3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -346,6 +463,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5AD871EA2F45F2A600DFF894 /* Build configuration list for PBXNativeTarget "GengokaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5AD871E82F45F2A600DFF894 /* Debug */,
+				5AD871E92F45F2A600DFF894 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		5ADA8BD42F2C5C0D004B3CB3 /* Build configuration list for PBXProject "Gengoka" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

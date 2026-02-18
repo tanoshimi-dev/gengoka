@@ -13,8 +13,12 @@ final class HomeViewModel {
     var isLoading = false
     var error: Error?
 
-    private let apiClient = APIClient.shared
+    private let apiClient: any APIClientProtocol
     private var isInitialLoadComplete = false
+
+    init(apiClient: any APIClientProtocol = APIClient.shared) {
+        self.apiClient = apiClient
+    }
     private var currentLoadTask: Task<Void, Never>? // Track the current load task
     
     func loadData() async {

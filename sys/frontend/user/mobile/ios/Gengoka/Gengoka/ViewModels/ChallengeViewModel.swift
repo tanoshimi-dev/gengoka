@@ -16,7 +16,11 @@ final class ChallengeViewModel {
     var error: Error?
     var result: AnswerResult?
 
-    private let apiClient = APIClient.shared
+    private let apiClient: any APIClientProtocol
+
+    init(apiClient: any APIClientProtocol = APIClient.shared) {
+        self.apiClient = apiClient
+    }
     
     /// True if user has already answered this challenge
     var isAlreadyAnswered: Bool {

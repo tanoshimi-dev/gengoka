@@ -15,7 +15,11 @@ final class FeedViewModel {
     var hasMore = true
     private var currentPage = 1
 
-    private let apiClient = APIClient.shared
+    private let apiClient: any APIClientProtocol
+
+    init(apiClient: any APIClientProtocol = APIClient.shared) {
+        self.apiClient = apiClient
+    }
 
     func loadFeed() async {
         isLoading = true

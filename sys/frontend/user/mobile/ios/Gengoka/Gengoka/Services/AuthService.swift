@@ -7,7 +7,7 @@ import Foundation
 import SwiftUI
 
 @Observable
-final class AuthService {
+final class AuthService: AuthServiceProtocol {
     static let shared = AuthService()
 
     // MARK: - Storage Keys

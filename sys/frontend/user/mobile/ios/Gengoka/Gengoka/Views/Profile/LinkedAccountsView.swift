@@ -13,7 +13,12 @@ final class LinkedAccountsViewModel {
     var error: String?
     var unlinkTarget: String?
 
+    private let apiClient: any APIClientProtocol
     private let appleDelegate = AppleSignInDelegate()
+
+    init(apiClient: any APIClientProtocol = APIClient.shared) {
+        self.apiClient = apiClient
+    }
 
     var allProviders: [(id: String, name: String, icon: String, color: Color)] {
         [
@@ -31,7 +36,7 @@ final class LinkedAccountsViewModel {
         isLoading = true
         error = nil
         do {
-            let result: [LinkedSocialAccount] = try await APIClient.shared.request(.linkedAccounts)
+            let result: [LinkedSocialAccount] = try await apiClient.request(.linkedAccounts)
             accounts = result
         } catch let e {
             if !e.isCancellationError {
@@ -64,7 +69,7 @@ final class LinkedAccountsViewModel {
                 accessToken: authResult.accessToken
             )
 
-            let linked: LinkedSocialAccount = try await APIClient.shared.request(.linkAccount, body: request)
+            let linked: LinkedSocialAccount = try await apiClient.request(.linkAccount, body: request)
             accounts.append(linked)
         } catch let authError as SocialAuthError where authError.errorDescription == nil {
             // User cancelled — ignore
@@ -79,7 +84,7 @@ final class LinkedAccountsViewModel {
     func unlinkAccount(provider: String) async {
         error = nil
         do {
-            try await APIClient.shared.requestVoid(.unlinkAccount(provider: provider))
+            try await apiClient.requestVoid(.unlinkAccount(provider: provider))
             accounts.removeAll { $0.provider == provider }
         } catch let e {
             if !e.isCancellationError {

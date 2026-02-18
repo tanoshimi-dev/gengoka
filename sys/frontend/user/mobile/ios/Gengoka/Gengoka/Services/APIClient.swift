@@ -6,7 +6,7 @@
 import Foundation
 
 
-actor APIClient {
+actor APIClient: APIClientProtocol {
     static let shared = APIClient()
 
     private let baseURL = "http://localhost:8080/api/v1"

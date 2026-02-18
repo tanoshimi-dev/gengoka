@@ -15,10 +15,17 @@ final class ProfileViewModel {
     var isLoadingStats = false
     var error: Error?
 
-    private let apiClient = APIClient.shared
+    private let apiClient: any APIClientProtocol
+    private let authService: any AuthServiceProtocol
+
+    init(apiClient: any APIClientProtocol = APIClient.shared,
+         authService: any AuthServiceProtocol = AuthService.shared) {
+        self.apiClient = apiClient
+        self.authService = authService
+    }
 
     var isCurrentUser: Bool {
-        user?.id == AuthService.shared.userId
+        user?.id == authService.userId
     }
 
     func loadProfile(userId: UUID) async {
@@ -45,7 +52,7 @@ final class ProfileViewModel {
         error = nil
 
         // First, check if we have authenticated user data
-        if let authUser = AuthService.shared.currentUser {
+        if let authUser = authService.currentUser {
             // Convert AuthUser to User for display
             user = User(
                 id: authUser.id,
