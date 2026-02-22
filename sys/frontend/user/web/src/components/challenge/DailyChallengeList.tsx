@@ -21,17 +21,17 @@ export function DailyChallengeList() {
       </div>
 
       {isLoading ? (
-        <div className="flex gap-3 overflow-hidden">
+        <div className="-mx-4 flex gap-3 overflow-hidden px-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[160px] max-w-[200px] animate-pulse rounded-xl bg-white shadow-sm sm:min-w-[200px]"
+              className="min-w-[160px] max-w-[200px] shrink-0 animate-pulse rounded-xl bg-white shadow-sm sm:min-w-[200px]"
               style={{ height: 140 }}
             />
           ))}
         </div>
       ) : data && data.length > 0 ? (
-        <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
           {data.map((item) => (
             <ChallengeCard key={item.challenge.id} item={item} />
           ))}

@@ -16,7 +16,7 @@ export function ChallengeCard({ item }: ChallengeCardProps) {
   return (
     <Link
       href={`/challenges/${challenge.id}`}
-      className="relative flex min-w-[160px] max-w-[200px] flex-col justify-between rounded-xl p-4 shadow-sm transition-transform hover:scale-[1.02] sm:min-w-[200px]"
+      className="relative flex min-w-[160px] max-w-[200px] shrink-0 snap-start flex-col justify-between rounded-xl p-4 shadow-sm transition-transform hover:scale-[1.02] sm:min-w-[200px]"
       style={{
         background: `linear-gradient(135deg, ${color}20, ${color}08)`,
         height: 140,
