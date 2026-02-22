@@ -11,6 +11,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude Code
+.claude/
+
 # Rust
 target/
 Cargo.lock
