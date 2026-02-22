@@ -1,4 +1,5 @@
 import type { Answer } from './answer';
+import type { Category } from './category';
 
 export interface Challenge {
   id: string;
@@ -11,6 +12,10 @@ export interface Challenge {
   status: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ChallengeWithCategory extends Challenge {
+  category: Category;
 }
 
 export interface DailyChallengeResponse {

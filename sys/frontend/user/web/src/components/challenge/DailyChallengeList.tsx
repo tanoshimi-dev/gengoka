@@ -1,0 +1,48 @@
+'use client';
+
+import { useDailyChallenges } from '@/hooks/useChallenges';
+import { ChallengeCard } from './ChallengeCard';
+import { PartyPopper } from 'lucide-react';
+
+export function DailyChallengeList() {
+  const { data, isLoading } = useDailyChallenges();
+
+  const incomplete = data?.filter((d) => !d.is_completed).length ?? 0;
+
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-[#1a1a2e]">今日のチャレンジ</h2>
+        {!isLoading && incomplete > 0 && (
+          <span className="rounded-full bg-[#667eea] px-2 py-0.5 text-xs font-medium text-white">
+            残り {incomplete}
+          </span>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="min-w-[200px] max-w-[200px] animate-pulse rounded-xl bg-white shadow-sm"
+              style={{ height: 140 }}
+            />
+          ))}
+        </div>
+      ) : data && data.length > 0 ? (
+        <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+          {data.map((item) => (
+            <ChallengeCard key={item.challenge.id} item={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-2 rounded-xl bg-white py-8 shadow-sm">
+          <PartyPopper className="h-8 w-8 text-[#FFD700]" />
+          <p className="text-sm font-medium text-[#1a1a2e]">すべて完了！</p>
+          <p className="text-xs text-[#999999]">今日のチャレンジはすべてクリアしました</p>
+        </div>
+      )}
+    </section>
+  );
+}
