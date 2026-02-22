@@ -46,3 +46,10 @@ export interface UpdateUserRequest {
   avatar?: string;
   bio?: string;
 }
+
+export interface LinkedSocialAccount {
+  provider: string;
+  provider_email: string | null;
+  provider_name: string | null;
+  linked_at: string;
+}
