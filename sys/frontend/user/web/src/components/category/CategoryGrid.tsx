@@ -9,7 +9,7 @@ export function CategoryGrid() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-32 animate-pulse rounded-xl bg-white shadow-sm" />
         ))}
@@ -22,7 +22,7 @@ export function CategoryGrid() {
   return (
     <section>
       <h2 className="mb-3 text-lg font-bold text-[#1a1a2e]">カテゴリ</h2>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {data.map((cat) => {
           const color = cat.color_hex || CATEGORY_COLORS[cat.name] || '#667eea';
           return (

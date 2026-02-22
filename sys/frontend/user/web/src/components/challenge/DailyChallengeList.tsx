@@ -25,7 +25,7 @@ export function DailyChallengeList() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[200px] max-w-[200px] animate-pulse rounded-xl bg-white shadow-sm"
+              className="min-w-[160px] max-w-[200px] animate-pulse rounded-xl bg-white shadow-sm sm:min-w-[200px]"
               style={{ height: 140 }}
             />
           ))}

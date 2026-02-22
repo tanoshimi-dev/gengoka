@@ -6,9 +6,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       <Header />
-      <div className="mx-auto flex max-w-7xl">
+      <div className="mx-auto flex max-w-7xl overflow-hidden">
         <Sidebar />
-        <main className="flex-1 px-4 py-6 pb-20 lg:pb-6">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-6 pb-20 lg:px-6 lg:pb-6">{children}</main>
       </div>
       <BottomNav />
     </div>

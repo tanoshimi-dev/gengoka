@@ -15,7 +15,7 @@ export function StatsBar() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-20 animate-pulse rounded-xl bg-white shadow-sm" />
         ))}
@@ -26,7 +26,7 @@ export function StatsBar() {
   if (!data) return null;
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {stats.map(({ key, label, icon: Icon, color }) => (
         <div
           key={key}

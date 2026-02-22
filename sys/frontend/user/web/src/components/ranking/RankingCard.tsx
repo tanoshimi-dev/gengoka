@@ -24,7 +24,7 @@ export function RankingCard({ answer, rank }: RankingCardProps) {
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl p-3 shadow-sm transition-colors ${
+      className={`flex items-center gap-2 rounded-xl p-2 shadow-sm transition-colors sm:gap-3 sm:p-3 ${
         isMe
           ? 'bg-gradient-to-r from-[#667eea]/10 to-[#764ba2]/10 ring-1 ring-[#667eea]/30'
           : 'bg-white'

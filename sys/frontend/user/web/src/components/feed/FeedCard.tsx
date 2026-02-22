@@ -18,7 +18,7 @@ export function FeedCard({ answer }: FeedCardProps) {
 
   return (
     <>
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <div className="rounded-xl bg-white p-3 shadow-sm sm:p-4">
         {/* Header */}
         <div className="flex items-center gap-3">
           <Link href={`/profile/${answer.user.id}`}>
