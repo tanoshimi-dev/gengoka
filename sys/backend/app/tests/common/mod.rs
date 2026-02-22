@@ -59,6 +59,7 @@ pub fn test_config() -> Config {
             google_client_id_ios: String::new(),
             google_client_id_android: String::new(),
             apple_client_id: "app.gengoka".to_string(),
+            apple_client_id_web: String::new(),
             apple_team_id: String::new(),
             line_channel_id: String::new(),
             line_channel_secret: String::new(),

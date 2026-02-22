@@ -83,6 +83,7 @@ mod tests {
             google_client_id_ios: String::new(),
             google_client_id_android: String::new(),
             apple_client_id: String::new(),
+            apple_client_id_web: String::new(),
             apple_team_id: String::new(),
             line_channel_id: "test-channel-id".to_string(),
             line_channel_secret: "test-channel-secret".to_string(),

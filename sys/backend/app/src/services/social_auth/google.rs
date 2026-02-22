@@ -143,6 +143,7 @@ mod tests {
             google_client_id_ios: "test-ios-client-id".to_string(),
             google_client_id_android: "test-android-client-id".to_string(),
             apple_client_id: String::new(),
+            apple_client_id_web: String::new(),
             apple_team_id: String::new(),
             line_channel_id: String::new(),
             line_channel_secret: String::new(),

@@ -67,7 +67,11 @@ pub async fn verify_apple_token(
 
     // Validate and decode
     let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::RS256);
-    validation.set_audience(&[&config.apple_client_id]);
+    let mut audiences: Vec<&str> = vec![&config.apple_client_id];
+    if !config.apple_client_id_web.is_empty() {
+        audiences.push(&config.apple_client_id_web);
+    }
+    validation.set_audience(&audiences);
     validation.set_issuer(&["https://appleid.apple.com"]);
 
     let token_data = jsonwebtoken::decode::<AppleClaims>(id_token, &decoding_key, &validation)
@@ -146,6 +150,7 @@ mod tests {
             google_client_id_ios: String::new(),
             google_client_id_android: String::new(),
             apple_client_id: "app.gengoka".to_string(),
+            apple_client_id_web: String::new(),
             apple_team_id: "test-team-id".to_string(),
             line_channel_id: String::new(),
             line_channel_secret: String::new(),
